@@ -1239,7 +1239,7 @@ export default function SedeServiciosREPSManager({
               <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
                 <th
                   style={{
-                    width: readOnly ? '38%' : '26%',
+                    width: readOnly ? '34%' : '26%',
                     padding: '11px 14px',
                     textAlign: 'left',
                     fontSize: 11,
@@ -1253,7 +1253,7 @@ export default function SedeServiciosREPSManager({
                 </th>
                 <th
                   style={{
-                    width: readOnly ? '30%' : '24%',
+                    width: readOnly ? '28%' : '21%',
                     padding: '11px 10px',
                     textAlign: 'center',
                     fontSize: 11,
@@ -1281,7 +1281,7 @@ export default function SedeServiciosREPSManager({
                 </th>
                 <th
                   style={{
-                    width: readOnly ? '14%' : '13%',
+                    width: readOnly ? '20%' : '18%',
                     padding: '11px 8px',
                     textAlign: 'center',
                     fontSize: 11,
@@ -1296,8 +1296,8 @@ export default function SedeServiciosREPSManager({
                 {!readOnly && (
                   <th
                     style={{
-                      width: '22%',
-                      padding: '11px 14px',
+                      width: '20%',
+                      padding: '11px 10px',
                       textAlign: 'center',
                       fontSize: 11,
                       fontWeight: 700,
@@ -1434,22 +1434,47 @@ export default function SedeServiciosREPSManager({
                                   `Distintivo_${srv.codigo_servicio}_${srv.numero_distintivo}.pdf`,
                               )
                             }
-                            className="plan-badge plan-complete"
                             style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 5,
+                              padding: '5px 10px',
+                              borderRadius: 999,
+                              background: '#dcfce7',
+                              color: '#166534',
+                              border: '1px solid #86efac',
+                              fontSize: 11,
                               fontWeight: 700,
                               whiteSpace: 'nowrap',
+                              wordBreak: 'keep-all',
+                              overflowWrap: 'normal',
                               cursor: 'pointer',
-                              border: '1px solid #86efac',
-                              textDecoration: 'underline',
-                              textUnderlineOffset: 2,
+                              textDecoration: 'none',
+                              lineHeight: 1.2,
                             }}
                           >
-                            <FileDown size={12} /> {srv.numero_distintivo || 'Ver Distintivo'}
+                            <FileDown size={12} style={{ flexShrink: 0 }} />
+                            <span>{srv.numero_distintivo || 'Ver Distintivo'}</span>
                           </button>
                         ) : (
                           <span
-                            className="plan-badge plan-future"
-                            style={{ fontWeight: 700, whiteSpace: 'nowrap' }}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '5px 10px',
+                              borderRadius: 999,
+                              background: '#f1f5f9',
+                              color: '#334155',
+                              border: '1px solid #e2e8f0',
+                              fontSize: 11,
+                              fontWeight: 700,
+                              whiteSpace: 'nowrap',
+                              wordBreak: 'keep-all',
+                              overflowWrap: 'normal',
+                              lineHeight: 1.2,
+                            }}
                             title="Edita el servicio y adjunta el PDF del distintivo para abrirlo con un clic"
                           >
                             {srv.numero_distintivo || 'Sin distintivo'}
