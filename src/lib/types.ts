@@ -50,6 +50,8 @@ export interface SedeServicioHabilitadoREPS {
   codigo_servicio: string
   nombre_servicio: string
   numero_distintivo: string // ej. DHSS0729494
+  distintivo_pdf_nombre?: string
+  distintivo_pdf_data?: string
   complejidad: ComplejidadServicio // Baja, Media, Alta
   fecha_apertura: string // YYYY-MM-DD
   especificidades: string

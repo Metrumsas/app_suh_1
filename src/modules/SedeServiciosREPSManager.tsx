@@ -1,5 +1,15 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, ChevronDown, ChevronUp, Pencil, Plus, Trash2, X } from 'lucide-react'
+import {
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  FileDown,
+  FilePlus2,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react'
 import type {
   ComplejidadServicio,
   GrupoServicio3100,
@@ -493,6 +503,59 @@ export default function SedeServiciosREPSManager({
                 }
               />
             </label>
+
+            <div className="form-field plan-wide">
+              <span>
+                PDF del Distintivo de Habilitación Entregado por la Secretaría de Salud
+              </span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 'auto' }}>
+                <label
+                  className="button button-secondary"
+                  style={{ cursor: 'pointer', flex: 1, height: 40 }}
+                >
+                  <FilePlus2 size={14} />{' '}
+                  {draft.distintivo_pdf_nombre
+                    ? `Distintivo PDF cargado: ${draft.distintivo_pdf_nombre}`
+                    : 'Cargar PDF del Distintivo de Habilitación (Secretaría de Salud)'}
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = () => {
+                        if (typeof reader.result === 'string') {
+                          setDraft((prev) => ({
+                            ...prev,
+                            distintivo_pdf_nombre: file.name,
+                            distintivo_pdf_data: reader.result as string,
+                          }))
+                        }
+                      }
+                      reader.readAsDataURL(file)
+                    }}
+                  />
+                </label>
+                {draft.distintivo_pdf_nombre && (
+                  <button
+                    type="button"
+                    className="button button-secondary button-danger"
+                    title="Quitar PDF del distintivo"
+                    onClick={() =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        distintivo_pdf_nombre: undefined,
+                        distintivo_pdf_data: undefined,
+                      }))
+                    }
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
 
             {/* Reglas de Especificidades Oficiales según tabla_parametros_servicios_310011.xlsx */}
             {selectedServiceParam && selectedServiceParam.especificidades_permitidas.length > 0 && (
@@ -1169,7 +1232,7 @@ export default function SedeServiciosREPSManager({
                 </th>
                 <th
                   style={{
-                    width: readOnly ? '18%' : '14%',
+                    width: readOnly ? '18%' : '15%',
                     padding: '11px 8px',
                     textAlign: 'center',
                     fontSize: 11,
@@ -1179,11 +1242,11 @@ export default function SedeServiciosREPSManager({
                     letterSpacing: '0.03em',
                   }}
                 >
-                  Complejidad
+                  Complejidad y Apertura
                 </th>
                 <th
                   style={{
-                    width: readOnly ? '14%' : '14%',
+                    width: readOnly ? '14%' : '13%',
                     padding: '11px 8px',
                     textAlign: 'center',
                     fontSize: 11,
@@ -1193,7 +1256,7 @@ export default function SedeServiciosREPSManager({
                     letterSpacing: '0.03em',
                   }}
                 >
-                  Apertura
+                  Distintivo
                 </th>
                 {!readOnly && (
                   <th
@@ -1294,11 +1357,14 @@ export default function SedeServiciosREPSManager({
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          gap: 3,
+                          gap: 4,
                         }}
                       >
                         <span className="plan-badge plan-future" style={{ fontWeight: 700 }}>
                           {srv.complejidad.toUpperCase()}
+                        </span>
+                        <span style={{ color: '#334155', fontWeight: 600, fontSize: 11.5 }}>
+                          {formatDateES(srv.fecha_apertura)}
                         </span>
                         {srv.especificidades && (
                           <small style={{ color: '#64748b', fontSize: 10.5 }}>
@@ -1312,12 +1378,45 @@ export default function SedeServiciosREPSManager({
                         padding: '12px 8px',
                         verticalAlign: 'middle',
                         textAlign: 'center',
-                        whiteSpace: 'nowrap',
                       }}
                     >
-                      <span style={{ color: '#334155', fontWeight: 600, fontSize: 12 }}>
-                        {formatDateES(srv.fecha_apertura)}
-                      </span>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <span
+                          className="plan-badge plan-future"
+                          style={{ fontWeight: 700, whiteSpace: 'nowrap' }}
+                        >
+                          {srv.numero_distintivo || 'Sin distintivo'}
+                        </span>
+                        {srv.distintivo_pdf_data && (
+                          <a
+                            href={srv.distintivo_pdf_data}
+                            download={
+                              srv.distintivo_pdf_nombre ||
+                              `Distintivo_${srv.codigo_servicio}_${srv.numero_distintivo}.pdf`
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              color: '#2563eb',
+                              fontSize: 10.5,
+                              fontWeight: 600,
+                              textDecoration: 'underline',
+                            }}
+                          >
+                            <FileDown size={11} /> Ver PDF
+                          </a>
+                        )}
+                      </div>
                     </td>
                     {!readOnly && (
                       <td style={{ padding: '12px 14px', verticalAlign: 'middle', textAlign: 'center' }}>
@@ -1454,9 +1553,32 @@ export default function SedeServiciosREPSManager({
                 <small style={{ color: '#64748b', display: 'block', fontSize: 10.5 }}>
                   NÚMERO DISTINTIVO
                 </small>
-                <strong style={{ color: '#1d4ed8' }}>
+                <strong style={{ color: '#1d4ed8', display: 'block' }}>
                   {detailViewItem.numero_distintivo || 'No registrado'}
                 </strong>
+                {detailViewItem.distintivo_pdf_data && (
+                  <a
+                    href={detailViewItem.distintivo_pdf_data}
+                    download={
+                      detailViewItem.distintivo_pdf_nombre ||
+                      `Distintivo_${detailViewItem.codigo_servicio}_${detailViewItem.numero_distintivo}.pdf`
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      marginTop: 3,
+                      color: '#2563eb',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    <FileDown size={12} /> Descargar PDF del Distintivo
+                  </a>
+                )}
               </div>
               <div>
                 <small style={{ color: '#64748b', display: 'block', fontSize: 10.5 }}>
