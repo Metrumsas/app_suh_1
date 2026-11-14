@@ -91,7 +91,7 @@ export function evaluateSemaphore3060(
   if (days <= 30) {
     return {
       level: 'critico',
-      label: `Crítico (≤ 30 días · ${days} d)`,
+      label: `Crítico (<= 30 días · ${days} d)`,
       days,
       countdown: days === 0 ? 'Vence hoy' : `Vence en ${days} días`,
       badgeClass: 'plan-urgent',

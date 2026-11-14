@@ -51,7 +51,13 @@ export class SarlaftPdfTemplate {
   }
 
   lines(text: string, width: number): string[] {
-    return this.pdf.splitTextToSize((text || '').replace(/\r\n?/g, '\n'), width)
+    const clean = (text || '')
+      .replace(/\r\n?/g, '\n')
+      .replace(/≤/g, '<=')
+      .replace(/≥/g, '>=')
+      .replace(/—/g, '-')
+      .replace(/–/g, '-')
+    return this.pdf.splitTextToSize(clean, width)
   }
 
   header() {
@@ -1066,17 +1072,28 @@ export function generateAdminSedePdf(
         : ev.semaforo.level === 'prioridad'
           ? [214, 144, 22]
           : [21, 150, 106]
+    const semLabelClean = (ev.semaforo.label || '')
+      .replace(/≤/g, '<=')
+      .replace(/≥/g, '>=')
+    const semText = `Semáforo: ${semLabelClean}`
     docTpl.font(7.6, true, semColor)
-    pdf.text(`Semáforo: ${ev.semaforo.label}`, docTpl.left + 3.8, y + 16.6)
+    pdf.text(semText, docTpl.left + 3.8, y + 16.6)
+
+    const semWidth = pdf.getTextWidth(semText)
+    const soporteStartX = Math.max(docTpl.left + 64, docTpl.left + 3.8 + semWidth + 6)
 
     docTpl.font(7.6, false, [75, 85, 99])
     const soporteTxt = ev.ultimoSoporte
       ? `Soporte vigente: ${ev.ultimoSoporte.titulo} (${ev.ultimoSoporte.archivo_nombre})`
       : 'Soporte vigente: SIN SOPORTE CARGADO'
-    pdf.text(soporteTxt.slice(0, 82), docTpl.left + 64, y + 16.6)
+    pdf.text(soporteTxt.slice(0, 78), soporteStartX, y + 16.6)
 
     docTpl.font(7.4, false, [100, 108, 115])
-    const obsTxt = `Observación / Estado: ${(criterio.observaciones || ev.motivo || '').replace(/\s+/g, ' ')}`
+    const obsRaw = (criterio.observaciones || ev.motivo || '')
+      .replace(/programaci\?n/gi, 'programación')
+      .replace(/ejecuci\?n/gi, 'ejecución')
+      .replace(/\s+/g, ' ')
+    const obsTxt = `Observación / Estado: ${obsRaw}`
     pdf.text(obsTxt.slice(0, 112), docTpl.left + 3.8, y + 21.6)
 
     docTpl.y = y + cardH + 2.8
