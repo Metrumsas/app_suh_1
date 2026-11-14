@@ -410,8 +410,24 @@ export interface InfraPhysicalItemEval {
   item_key: string
   item_nombre: string
   calificacion: CalificacionCondicionFisica
-  observacion: string
-  hallazgo?: string
+  observacion: string // Compatibilidad retroactiva (Fortaleza)
+  fortaleza?: string
+  debilidad?: string
+  hallazgo?: string // Compatibilidad retroactiva (Debilidad)
+  // Datos de Programación de Actividad de Mantenimiento (Obligatorios si es Parcial o No Cumple)
+  programacion_mantenimiento?: {
+    clasificacion: ClasificacionMantenimientoInfra
+    titulo: string
+    descripcion: string
+    periodicidad: PeriodicidadCriterioAdmin
+    fecha_ejecucion: string
+    presupuesto: number
+    responsable: string
+    responsable_correo?: string
+    soporte_pdf_nombre?: string
+    soporte_pdf_data?: string
+  }
+  infra_mantenimiento_id?: string
   plan_trabajo_id?: string
 }
 
@@ -421,6 +437,7 @@ export interface InfraSedeEvaluation {
   fecha_evaluacion: string
   evaluador: string
   observacion_general: string
+  fotos_evaluacion?: { id: string; leyenda: string; url: string }[] // Mínimo 1, Máximo 4 si hay parcial o no_cumple
   items: InfraPhysicalItemEval[]
 }
 

@@ -49,6 +49,24 @@ const CLASIFICACIONES_INFRA: ClasificacionMantenimientoInfra[] = [
   'Accesibilidad y Señalización',
 ]
 
+function defaultClasifForPhysicalItem(key: string): ClasificacionMantenimientoInfra {
+  if (key === 'pintura' || key === 'piso') return 'Obra Civil, Pisos y Pintura'
+  if (key === 'techos') return 'Cubiertas y Techos'
+  if (key === 'ventanas' || key === 'puertas') return 'Carpintería, Puertas y Ventanas'
+  if (key === 'iluminacion' || key === 'apagadores' || key === 'puntos_electricos')
+    return 'Eléctrico e Iluminación'
+  if (
+    key === 'luces_emergencia' ||
+    key === 'detectores_humo' ||
+    key === 'alarma_emergencias'
+  )
+    return 'Sistemas de Emergencia y Detección'
+  if (key === 'banos') return 'Hidrosanitario'
+  if (key === 'accesibilidad' || key === 'senalizacion')
+    return 'Accesibilidad y Señalización'
+  return 'Obra Civil, Pisos y Pintura'
+}
+
 function getActivityDates(act: InfraMaintenanceActivity, today: string): AdminScheduledExecutionDate[] {
   if (act.fechas_programadas_anual && act.fechas_programadas_anual.length > 0) {
     return act.fechas_programadas_anual
@@ -133,17 +151,27 @@ function generateInfraSedePlanPdf(
 
   tpl.section('Evaluación de las 14 condiciones físicas locativas de la sede')
   tpl.table(
-    ['CONDICIÓN FÍSICA EVALUADA', 'CALIFICACIÓN', 'OBSERVACIÓN / HALLAZGO'],
-    evalFisica.map((it) => [
-      it.item_nombre,
-      it.calificacion === 'cumple'
-        ? 'CUMPLE'
-        : it.calificacion === 'parcial'
-          ? 'PARCIAL'
-          : 'NO CUMPLE',
-      it.hallazgo ? `${it.observacion} | Hallazgo: ${it.hallazgo}` : it.observacion,
-    ]),
-    [0.42, 0.16, 0.42],
+    ['ÍTEM EVALUADO', 'CALIFICACIÓN', 'FORTALEZA', 'DEBILIDAD Y ACCIÓN PROGRAMADA'],
+    evalFisica.map((it) => {
+      const fort = it.fortaleza ?? it.observacion ?? '—'
+      const deb = it.debilidad ?? it.hallazgo ?? '—'
+      const prog = it.programacion_mantenimiento
+      const progStr =
+        (it.calificacion === 'parcial' || it.calificacion === 'no_cumple') && prog
+          ? `Debilidad: ${deb} | Prog. Mantenimiento: ${prog.titulo} (${prog.clasificacion} · ${prog.periodicidad} · Fecha: ${formatDateES(prog.fecha_ejecucion)} · Presup: ${formatCOP(prog.presupuesto)} · Resp: ${prog.responsable})`
+          : deb
+      return [
+        it.item_nombre,
+        it.calificacion === 'cumple'
+          ? 'CUMPLE'
+          : it.calificacion === 'parcial'
+            ? 'CUMPLE PARCIALMENTE'
+            : 'NO CUMPLE',
+        fort,
+        progStr,
+      ]
+    }),
+    [0.28, 0.14, 0.24, 0.34],
   )
 
   const pdf = tpl.finish()
@@ -225,39 +253,67 @@ export default function InfraestructuraModule({
     sedesOperativas.find((s) => s.id === activeSedeId) || sedesOperativas[0]
   const existingEval = db.infra_evaluaciones.find((e) => e.sede_id === currentSedeObj?.id)
 
-  const [evalItems, setEvalItems] = useState<InfraPhysicalItemEval[]>(() =>
+  const buildEvalItemsForSede = (sedeObj?: Sede, foundEval?: typeof existingEval): InfraPhysicalItemEval[] =>
     CONDICIONES_FISICAS_SEDE.map((c) => {
-      const found = existingEval?.items.find((i) => i.item_key === c.key)
-      return (
-        found || {
-          item_key: c.key,
-          item_nombre: c.nombre,
-          calificacion: 'cumple',
-          observacion: 'Verificado en óptimas condiciones.',
-          hallazgo: '',
+      const found = foundEval?.items.find((i) => i.item_key === c.key)
+      const defaultProg = {
+        clasificacion: defaultClasifForPhysicalItem(c.key),
+        titulo: `Mantenimiento y adecuación locativa — ${c.nombre.split('(')[0].trim()}`,
+        descripcion: '',
+        periodicidad: 'Unica vez' as PeriodicidadCriterioAdmin,
+        fecha_ejecucion: calculateExpirationByPeriodicidad(today, 'Mensual'),
+        presupuesto: 0,
+        responsable: sedeObj?.director_responsable || currentUser.nombre_completo,
+        responsable_correo: currentUser.correo,
+        soporte_pdf_nombre: '',
+        soporte_pdf_data: '',
+      }
+      if (found) {
+        return {
+          ...found,
+          fortaleza: found.fortaleza ?? found.observacion ?? 'Verificado en óptimas condiciones.',
+          debilidad: found.debilidad ?? found.hallazgo ?? '',
+          programacion_mantenimiento: found.programacion_mantenimiento || defaultProg,
         }
-      )
-    }),
+      }
+      return {
+        item_key: c.key,
+        item_nombre: c.nombre,
+        calificacion: 'cumple',
+        observacion: 'Verificado en óptimas condiciones.',
+        fortaleza: 'Verificado en óptimas condiciones.',
+        debilidad: '',
+        hallazgo: '',
+        programacion_mantenimiento: defaultProg,
+      }
+    })
+
+  const [evalItems, setEvalItems] = useState<InfraPhysicalItemEval[]>(() =>
+    buildEvalItemsForSede(currentSedeObj, existingEval),
   )
+
+  const [evalPhotoSlots, setEvalPhotoSlots] = useState<
+    ({ id: string; leyenda: string; url: string } | null)[]
+  >(() => {
+    const saved = existingEval?.fotos_evaluacion || []
+    return [saved[0] ?? null, saved[1] ?? null, saved[2] ?? null, saved[3] ?? null]
+  })
+  const [evalFormError, setEvalFormError] = useState('')
 
   const selectSingleSede = (sedeId: string) => {
     setActiveSedeId(sedeId)
     setSelectedSedeIds([sedeId])
+    const targetSede = sedesOperativas.find((s) => s.id === sedeId)
     const foundEval = db.infra_evaluaciones.find((e) => e.sede_id === sedeId)
-    setEvalItems(
-      CONDICIONES_FISICAS_SEDE.map((c) => {
-        const f = foundEval?.items.find((i) => i.item_key === c.key)
-        return (
-          f || {
-            item_key: c.key,
-            item_nombre: c.nombre,
-            calificacion: 'cumple',
-            observacion: 'Cumple condiciones físicas.',
-            hallazgo: '',
-          }
-        )
-      }),
-    )
+    setEvalItems(buildEvalItemsForSede(targetSede, foundEval))
+    const savedPhotos = foundEval?.fotos_evaluacion || []
+    setEvalPhotoSlots([
+      savedPhotos[0] ?? null,
+      savedPhotos[1] ?? null,
+      savedPhotos[2] ?? null,
+      savedPhotos[3] ?? null,
+    ])
+    setEvalFormError('')
   }
 
   const q = query.trim().toLowerCase()
@@ -631,36 +687,173 @@ export default function InfraestructuraModule({
     setModalMode(null)
   }
 
+  const handleUploadEvalPhoto = (slotIdx: number, file: File | null, defaultLabel: string) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setEvalPhotoSlots((prev) =>
+          prev.map((item, idx) =>
+            idx === slotIdx
+              ? {
+                  id: `ft-eval-inf-${Date.now()}-${slotIdx}`,
+                  leyenda: item?.leyenda || defaultLabel || file.name,
+                  url: reader.result as string,
+                }
+              : item,
+          ),
+        )
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
   const handleSavePhysicalEval = () => {
     if (!currentSedeObj) return
-    const missingHallazgo = evalItems.find(
-      (i) =>
-        (i.calificacion === 'parcial' || i.calificacion === 'no_cumple') &&
-        !i.hallazgo?.trim(),
+    setEvalFormError('')
+
+    const nonCompliantItems = evalItems.filter(
+      (i) => i.calificacion === 'parcial' || i.calificacion === 'no_cumple',
     )
-    if (missingHallazgo) {
-      alert(
-        `El ítem "${missingHallazgo.item_nombre}" está calificado como "${missingHallazgo.calificacion}". Describe el hallazgo para vincularlo al Plan de Trabajo.`,
+
+    for (const item of nonCompliantItems) {
+      const deb = (item.debilidad ?? item.hallazgo ?? '').trim()
+      if (!deb) {
+        setEvalFormError(
+          `El ítem "${item.item_nombre}" está calificado como "${item.calificacion === 'parcial' ? 'Cumple parcialmente' : 'No cumple'}". Debes describir la Debilidad identificada.`,
+        )
+        return
+      }
+      const prog = item.programacion_mantenimiento
+      if (
+        !prog ||
+        !prog.titulo.trim() ||
+        !prog.descripcion.trim() ||
+        !prog.fecha_ejecucion ||
+        !prog.responsable.trim()
+      ) {
+        setEvalFormError(
+          `Completa todos los datos de Programación de Actividad de Mantenimiento (Título, Descripción de la actividad, Fecha de ejecución, Frecuencia, Presupuesto y Responsable) para el ítem "${item.item_nombre}".`,
+        )
+        return
+      }
+    }
+
+    const validEvalPhotos = evalPhotoSlots.filter(
+      (p): p is { id: string; leyenda: string; url: string } => p !== null,
+    )
+
+    if (nonCompliantItems.length > 0 && (validEvalPhotos.length < 1 || validEvalPhotos.length > 4)) {
+      setEvalFormError(
+        'Como se presenta incumplimiento o cumplimiento parcial en la evaluación general de la sede, es obligatorio adjuntar mínimo 1 fotografía y máximo 4 fotografías en el Registro Fotográfico General de la Evaluación.',
       )
       return
     }
 
     updateDb((draft) => {
       const updatedItems = evalItems.map((item) => {
+        const fort = (item.fortaleza ?? item.observacion ?? '').trim()
+        const deb = (item.debilidad ?? item.hallazgo ?? '').trim()
+
         if (item.calificacion === 'parcial' || item.calificacion === 'no_cumple') {
+          const prog = item.programacion_mantenimiento!
+          const orderedDates = generateAnnualScheduleDates(
+            prog.fecha_ejecucion || today,
+            prog.periodicidad || 'Unica vez',
+          )
+          const nextPendingDate = orderedDates[0]?.fecha_programada || prog.fecha_ejecucion || today
+          const resumenFechas = orderedDates
+            .map((d) => `#${d.numero}: ${formatDateES(d.fecha_programada)}`)
+            .join(' · ')
+
+          const mtoId =
+            item.infra_mantenimiento_id ||
+            `inf-mto-eval-${currentSedeObj.id}-${item.item_key}`
+
           const ptId = pushToWorkPlan(draft, {
-            titulo: `[Hallazgo Locativo ${currentSedeObj.nombre}] ${item.item_nombre.split('(')[0].trim()}`,
-            descripcion: `Evaluación física de sede (${item.calificacion.toUpperCase()}): ${item.hallazgo}`,
+            titulo: `[Infraestructura - ${prog.periodicidad}] ${prog.titulo.trim()}`,
+            descripcion: `${prog.clasificacion}: ${prog.descripcion.trim()} | Debilidad (${item.item_nombre}): ${deb} | Fechas: ${resumenFechas}`,
             sede_id: currentSedeObj.id,
             modulo_origen: 'Infraestructura',
-            referencia_origen_id: `eval-fis-${currentSedeObj.id}-${item.item_key}`,
-            responsable: currentSedeObj.director_responsable,
-            fecha_limite: calculateExpirationByPeriodicidad(today, 'Mensual'),
+            referencia_origen_id: mtoId,
+            responsable: prog.responsable.trim(),
+            responsable_correo: prog.responsable_correo?.trim() || currentUser.correo,
+            fecha_limite: nextPendingDate,
+            presupuesto: Number(prog.presupuesto) || 0,
             usuario_creador: currentUser.nombre_completo,
           })
-          return { ...item, plan_trabajo_id: ptId }
+
+          // Crear o actualizar la actividad en el Plan de Mantenimiento Anual de la Sede (ventana 3 y 1)
+          const existingMtoIdx = draft.infra_mantenimientos.findIndex((m) => m.id === mtoId)
+          if (existingMtoIdx >= 0) {
+            const target = draft.infra_mantenimientos[existingMtoIdx]
+            target.clasificacion = prog.clasificacion
+            target.titulo = prog.titulo.trim()
+            target.descripcion = `${prog.descripcion.trim()} (Origen: Evaluación Condición Física "${item.item_nombre}" — Debilidad: ${deb})`
+            target.periodicidad = prog.periodicidad
+            target.fechas_programadas_anual = orderedDates
+            target.presupuesto = Number(prog.presupuesto) || 0
+            if (prog.soporte_pdf_nombre) {
+              target.soporte_pdf_nombre = prog.soporte_pdf_nombre
+              target.soporte_pdf_data = prog.soporte_pdf_data
+            }
+            target.plazo_ejecucion = nextPendingDate
+            target.responsable = prog.responsable.trim()
+            target.responsable_correo = prog.responsable_correo?.trim() || currentUser.correo
+            target.plan_trabajo_id = ptId
+          } else {
+            draft.infra_mantenimientos.unshift({
+              id: mtoId,
+              sede_id: currentSedeObj.id,
+              clasificacion: prog.clasificacion,
+              titulo: prog.titulo.trim(),
+              descripcion: `${prog.descripcion.trim()} (Origen: Evaluación Condición Física "${item.item_nombre}" — Debilidad: ${deb})`,
+              periodicidad: prog.periodicidad,
+              fechas_programadas_anual: orderedDates,
+              version_programacion: 1,
+              version_actividad: 1,
+              presupuesto: Number(prog.presupuesto) || 0,
+              presupuesto_ejecutado: 0,
+              soporte_pdf_nombre: prog.soporte_pdf_nombre || undefined,
+              soporte_pdf_data: prog.soporte_pdf_data || undefined,
+              plazo_ejecucion: nextPendingDate,
+              responsable: prog.responsable.trim(),
+              responsable_correo: prog.responsable_correo?.trim() || currentUser.correo,
+              estado: 'Programada',
+              seguimientos: [],
+              historial: [
+                {
+                  id: `h-inf-eval-${Date.now()}-${item.item_key}`,
+                  fecha: `${today} ${new Date().toTimeString().slice(0, 5)}`,
+                  tipo: 'Programación inicial',
+                  version: 1,
+                  detalle_version: `Prog. v1 desde Evaluación Condiciones Físicas (${prog.periodicidad}): ${resumenFechas} · Presupuesto: ${formatCOP(Number(prog.presupuesto) || 0)}`,
+                  justificacion: `Hallazgo/Debilidad en "${item.item_nombre}": ${deb}`,
+                  usuario: currentUser.nombre_completo,
+                },
+              ],
+              plan_trabajo_id: ptId,
+            })
+          }
+
+          return {
+            ...item,
+            observacion: fort,
+            fortaleza: fort,
+            debilidad: deb,
+            hallazgo: deb,
+            infra_mantenimiento_id: mtoId,
+            plan_trabajo_id: ptId,
+          }
         }
-        return item
+
+        return {
+          ...item,
+          observacion: fort,
+          fortaleza: fort,
+          debilidad: deb,
+          hallazgo: deb,
+        }
       })
 
       const idx = draft.infra_evaluaciones.findIndex((e) => e.sede_id === currentSedeObj.id)
@@ -670,13 +863,14 @@ export default function InfraestructuraModule({
         fecha_evaluacion: today,
         evaluador: currentUser.nombre_completo,
         observacion_general: `Evaluación física de 14 condiciones locativas de ${currentSedeObj.nombre}.`,
+        fotos_evaluacion: validEvalPhotos,
         items: updatedItems,
       }
       if (idx >= 0) draft.infra_evaluaciones[idx] = payload
       else draft.infra_evaluaciones.push(payload)
 
       return draft
-    }, 'Evaluación de condiciones físicas de la sede guardada.')
+    }, 'Evaluación física guardada y actividades incorporadas automáticamente al Plan de Mantenimiento de la Sede y al Plan de Trabajo.')
   }
 
   return (
@@ -1835,20 +2029,23 @@ export default function InfraestructuraModule({
       })()}
 
       {/* ====================================================================
-          SUB-VISTA 3: EVALUACIÓN DE LAS CONDICIONES FÍSICAS DE LA SEDE
-          Pintura, piso, techos, ventanas, iluminación, apagadores, puntos eléctricos,
-          puertas, luces de emergencia, detectores de humo, alarma de emergencias,
-          baños, accesibilidad, señalización -> Parcial/No cumple va a Plan de Trabajo
+          SUB-VISTA 4: EVALUACIÓN DE LAS CONDICIONES FÍSICAS DE LA SEDE
+          Columnas: Ítem, Calificación, Fortaleza, Debilidad.
+          Si algún ítem es Parcial o No Cumple:
+          1. Despliega el formulario completo de Programación de Actividad de Mantenimiento
+             para ese ítem (Título, Descripción, Clasificación, Frecuencia, Fecha de ejecución,
+             Presupuesto, Responsable, Soporte PDF opcional) y lo incorpora al Plan de Mantenimiento de la Sede.
+          2. Solicita a nivel general de la Evaluación entre 1 y 4 fotografías de evidencia.
          ==================================================================== */}
       {windowView === 'evaluacion' && currentSedeObj && (
         <section className="panel plan-table-panel">
           <div className="plan-controls">
             <div>
               <h2>
-                Evaluación de Condiciones Físicas de la Sede — {currentSedeObj.nombre}
+                Condiciones Físicas de la Sede — {currentSedeObj.nombre}
               </h2>
               <p>
-                Califica cada ítem en <strong>Cumple</strong>, <strong>Cumple parcialmente</strong> o <strong>No cumple</strong>. Cuando se registra <em>Cumple parcialmente</em> o <em>No cumple</em>, se solicita el hallazgo y se envía automáticamente al <strong>Plan de Trabajo</strong>.
+                Evalúa cada condición registrando su <strong>Calificación</strong>, <strong>Fortaleza</strong> y <strong>Debilidad</strong>. Cuando un ítem se califica en <em>Cumple parcialmente</em> o <em>No cumple</em>, se solicitan los datos de programación para incluir la actividad directamente en el <strong>Plan de Mantenimiento de la Sede</strong> (y en el Plan de Trabajo), además del registro fotográfico general de la evaluación (mínimo 1 y máximo 4 fotos).
               </p>
             </div>
             <button
@@ -1856,97 +2053,551 @@ export default function InfraestructuraModule({
               className="button button-primary"
               onClick={handleSavePhysicalEval}
             >
-              <CheckCircle2 size={15} /> Guardar Evaluación y Enviar Hallazgos al Plan de Trabajo
+              <CheckCircle2 size={15} /> Guardar Evaluación e Incorporar al Plan de Mantenimiento
             </button>
           </div>
+
+          {evalFormError && (
+            <div className="portal-error" role="alert" style={{ marginBottom: 14 }}>
+              {evalFormError}
+            </div>
+          )}
 
           <div className="plan-table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Ítem de Condición Física (Res. 3100)</th>
-                  <th>Calificación</th>
-                  <th>Observación Técnica</th>
-                  <th>Hallazgo (Obligatorio si es Parcial o No Cumple → Va a Plan de Trabajo)</th>
+                  <th style={{ width: '26%' }}>Ítem</th>
+                  <th style={{ width: '16%' }}>Calificación</th>
+                  <th style={{ width: '29%' }}>Fortaleza</th>
+                  <th style={{ width: '29%' }}>Debilidad</th>
                 </tr>
               </thead>
               <tbody>
                 {evalItems.map((item, idx) => {
-                  const requiresHallazgo =
+                  const requiresMaintenance =
                     item.calificacion === 'parcial' || item.calificacion === 'no_cumple'
+                  const prog = item.programacion_mantenimiento || {
+                    clasificacion: defaultClasifForPhysicalItem(item.item_key),
+                    titulo: `Mantenimiento y adecuación locativa — ${item.item_nombre.split('(')[0].trim()}`,
+                    descripcion: '',
+                    periodicidad: 'Unica vez' as PeriodicidadCriterioAdmin,
+                    fecha_ejecucion: calculateExpirationByPeriodicidad(today, 'Mensual'),
+                    presupuesto: 0,
+                    responsable: currentSedeObj.director_responsable || currentUser.nombre_completo,
+                    responsable_correo: currentUser.correo,
+                    soporte_pdf_nombre: '',
+                    soporte_pdf_data: '',
+                  }
+
+                  const updateProgField = <K extends keyof typeof prog>(
+                    field: K,
+                    value: (typeof prog)[K],
+                  ) => {
+                    setEvalItems((prev) =>
+                      prev.map((x, i) =>
+                        i === idx
+                          ? {
+                              ...x,
+                              programacion_mantenimiento: {
+                                ...(x.programacion_mantenimiento || prog),
+                                [field]: value,
+                              },
+                            }
+                          : x,
+                      ),
+                    )
+                  }
+
                   return (
-                    <tr key={item.item_key}>
-                      <td data-label="Condición Física">
-                        <strong>
-                          {idx + 1}. {item.item_nombre}
-                        </strong>
-                      </td>
-                      <td data-label="Calificación">
-                        <select
-                          value={item.calificacion}
-                          onChange={(e) => {
-                            const val = e.target.value as CalificacionCondicionFisica
-                            setEvalItems((prev) =>
-                              prev.map((x, i) => (i === idx ? { ...x, calificacion: val } : x)),
-                            )
-                          }}
-                          style={{
-                            fontWeight: 600,
-                            color:
-                              item.calificacion === 'cumple'
-                                ? '#176342'
-                                : item.calificacion === 'parcial'
-                                  ? '#785500'
-                                  : '#a32828',
-                          }}
-                        >
-                          <option value="cumple">Cumple</option>
-                          <option value="parcial">Cumple parcialmente</option>
-                          <option value="no_cumple">No cumple</option>
-                        </select>
-                      </td>
-                      <td data-label="Observación">
-                        <input
-                          value={item.observacion}
-                          onChange={(e) => {
-                            const val = e.target.value
-                            setEvalItems((prev) =>
-                              prev.map((x, i) => (i === idx ? { ...x, observacion: val } : x)),
-                            )
-                          }}
-                          style={{ width: '100%', padding: 6, border: '1px solid #cbd5e1', borderRadius: 6 }}
-                        />
-                      </td>
-                      <td data-label="Hallazgo">
-                        {requiresHallazgo ? (
+                    <>
+                      <tr key={item.item_key}>
+                        <td data-label="Ítem">
+                          <strong>
+                            {idx + 1}. {item.item_nombre}
+                          </strong>
+                        </td>
+                        <td data-label="Calificación">
+                          <select
+                            value={item.calificacion}
+                            onChange={(e) => {
+                              const val = e.target.value as CalificacionCondicionFisica
+                              setEvalItems((prev) =>
+                                prev.map((x, i) =>
+                                  i === idx
+                                    ? {
+                                        ...x,
+                                        calificacion: val,
+                                        programacion_mantenimiento:
+                                          x.programacion_mantenimiento || prog,
+                                      }
+                                    : x,
+                                ),
+                              )
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '7px 8px',
+                              borderRadius: 6,
+                              border: '1px solid #cbd5e1',
+                              fontWeight: 700,
+                              color:
+                                item.calificacion === 'cumple'
+                                  ? '#176342'
+                                  : item.calificacion === 'parcial'
+                                    ? '#b45309'
+                                    : '#b42318',
+                              background:
+                                item.calificacion === 'cumple'
+                                  ? '#f0fdf4'
+                                  : item.calificacion === 'parcial'
+                                    ? '#fffbeb'
+                                    : '#fef2f2',
+                            }}
+                          >
+                            <option value="cumple">Cumple</option>
+                            <option value="parcial">Cumple parcialmente</option>
+                            <option value="no_cumple">No cumple</option>
+                          </select>
+                        </td>
+                        <td data-label="Fortaleza">
                           <input
-                            required
-                            value={item.hallazgo || ''}
+                            value={item.fortaleza ?? item.observacion ?? ''}
                             onChange={(e) => {
                               const val = e.target.value
                               setEvalItems((prev) =>
-                                prev.map((x, i) => (i === idx ? { ...x, hallazgo: val } : x)),
+                                prev.map((x, i) =>
+                                  i === idx
+                                    ? { ...x, fortaleza: val, observacion: val }
+                                    : x,
+                                ),
                               )
                             }}
-                            placeholder="Describir hallazgo para enviar a Plan de Trabajo *"
+                            placeholder="Registrar fortaleza observada en el ítem..."
                             style={{
                               width: '100%',
-                              padding: 6,
-                              border: '1px solid #f59e0b',
-                              background: '#fffbeb',
+                              padding: '7px 10px',
+                              border: '1px solid #cbd5e1',
                               borderRadius: 6,
                             }}
                           />
-                        ) : (
-                          <small style={{ color: '#15966a' }}>Sin hallazgo</small>
-                        )}
-                      </td>
-                    </tr>
+                        </td>
+                        <td data-label="Debilidad">
+                          <input
+                            required={requiresMaintenance}
+                            value={item.debilidad ?? item.hallazgo ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              setEvalItems((prev) =>
+                                prev.map((x, i) =>
+                                  i === idx
+                                    ? {
+                                        ...x,
+                                        debilidad: val,
+                                        hallazgo: val,
+                                        programacion_mantenimiento: {
+                                          ...(x.programacion_mantenimiento || prog),
+                                          descripcion:
+                                            (x.programacion_mantenimiento || prog).descripcion ||
+                                            val,
+                                        },
+                                      }
+                                    : x,
+                                ),
+                              )
+                            }}
+                            placeholder={
+                              requiresMaintenance
+                                ? 'Describir debilidad / hallazgo obligatorio *'
+                                : 'Opcional si presenta oportunidad de mejora...'
+                            }
+                            style={{
+                              width: '100%',
+                              padding: '7px 10px',
+                              border: requiresMaintenance
+                                ? '1.5px solid #f59e0b'
+                                : '1px solid #cbd5e1',
+                              background: requiresMaintenance ? '#fffbeb' : '#ffffff',
+                              borderRadius: 6,
+                            }}
+                          />
+                        </td>
+                      </tr>
+
+                      {/* Fila desplegable automática para programar la actividad en el Plan de Mantenimiento de la Sede */}
+                      {requiresMaintenance && (
+                        <tr key={`${item.item_key}-prog`} style={{ background: '#f8fafc' }}>
+                          <td colSpan={4} style={{ padding: '12px 16px', borderTop: 'none' }}>
+                            <div
+                              style={{
+                                border: '1.5px solid #93c5fd',
+                                borderRadius: 10,
+                                padding: '14px 16px',
+                                background: '#eff6ff',
+                                display: 'grid',
+                                gap: 12,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  flexWrap: 'wrap',
+                                  gap: 8,
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <Wrench size={15} style={{ color: '#1d4ed8' }} />
+                                  <strong style={{ fontSize: 12.5, color: '#1e3a8a' }}>
+                                    Programación en el Plan de Mantenimiento de la Sede ({currentSedeObj.nombre}) — Ítem {idx + 1}: {item.item_nombre}
+                                  </strong>
+                                </div>
+                                <span className="plan-badge plan-urgent" style={{ fontSize: 10.5, fontWeight: 700 }}>
+                                  Se envía al Plan de Mantenimiento de la Sede y al Plan de Trabajo
+                                </span>
+                              </div>
+
+                              <div className="plan-form-grid">
+                                <label className="form-field">
+                                  <span>
+                                    Clasificación de Mantenimiento <b>*</b>
+                                  </span>
+                                  <select
+                                    value={prog.clasificacion}
+                                    onChange={(e) =>
+                                      updateProgField(
+                                        'clasificacion',
+                                        e.target.value as ClasificacionMantenimientoInfra,
+                                      )
+                                    }
+                                  >
+                                    {CLASIFICACIONES_INFRA.map((c) => (
+                                      <option key={c} value={c}>
+                                        {c}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+
+                                <label className="form-field">
+                                  <span>
+                                    Título de la Actividad a Programar <b>*</b>
+                                  </span>
+                                  <input
+                                    required
+                                    value={prog.titulo}
+                                    onChange={(e) => updateProgField('titulo', e.target.value)}
+                                    placeholder="Ej. Resane e impermeabilización de muros..."
+                                  />
+                                </label>
+
+                                <label className="form-field">
+                                  <span>
+                                    Frecuencia <b>*</b>
+                                  </span>
+                                  <select
+                                    value={prog.periodicidad}
+                                    onChange={(e) =>
+                                      updateProgField(
+                                        'periodicidad',
+                                        e.target.value as PeriodicidadCriterioAdmin,
+                                      )
+                                    }
+                                  >
+                                    {FRECUENCIAS_CRONOGRAMA_ADMIN.map((f) => (
+                                      <option key={f} value={f}>
+                                        {f}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+
+                                <label className="form-field">
+                                  <span>
+                                    Fecha Programada de Ejecución <b>*</b>
+                                  </span>
+                                  <input
+                                    type="date"
+                                    required
+                                    value={prog.fecha_ejecucion}
+                                    onChange={(e) =>
+                                      updateProgField('fecha_ejecucion', e.target.value)
+                                    }
+                                  />
+                                </label>
+
+                                <label className="form-field">
+                                  <span>
+                                    Presupuesto Estimado ($ COP) <b>*</b>
+                                  </span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="50000"
+                                    required
+                                    value={prog.presupuesto}
+                                    onChange={(e) =>
+                                      updateProgField('presupuesto', Number(e.target.value) || 0)
+                                    }
+                                  />
+                                </label>
+
+                                <label className="form-field">
+                                  <span>
+                                    Responsable de Ejecución <b>*</b>
+                                  </span>
+                                  <input
+                                    required
+                                    value={prog.responsable}
+                                    onChange={(e) => updateProgField('responsable', e.target.value)}
+                                  />
+                                </label>
+
+                                <label className="form-field plan-wide">
+                                  <span>
+                                    Descripción Técnica de la Actividad de Mantenimiento <b>*</b>
+                                  </span>
+                                  <input
+                                    required
+                                    value={prog.descripcion}
+                                    onChange={(e) => updateProgField('descripcion', e.target.value)}
+                                    placeholder="Describe el alcance del mantenimiento correctivo/preventivo que se ejecutará..."
+                                  />
+                                </label>
+
+                                <div className="form-field plan-wide">
+                                  <span>
+                                    Soporte PDF Adjunto (Cotización / Orden / Ficha Técnica - Opcional)
+                                  </span>
+                                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <label
+                                      className="button button-secondary"
+                                      style={{ cursor: 'pointer', flex: 1, height: 36 }}
+                                    >
+                                      <FilePlus2 size={14} />{' '}
+                                      {prog.soporte_pdf_nombre
+                                        ? `PDF cargado: ${prog.soporte_pdf_nombre}`
+                                        : 'Adjuntar soporte PDF (Opcional)'}
+                                      <input
+                                        type="file"
+                                        accept=".pdf,application/pdf"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => {
+                                          const f = e.target.files?.[0]
+                                          if (!f) return
+                                          const r = new FileReader()
+                                          r.onload = () => {
+                                            if (typeof r.result === 'string') {
+                                              setEvalItems((prev) =>
+                                                prev.map((x, i) =>
+                                                  i === idx
+                                                    ? {
+                                                        ...x,
+                                                        programacion_mantenimiento: {
+                                                          ...(x.programacion_mantenimiento || prog),
+                                                          soporte_pdf_nombre: f.name,
+                                                          soporte_pdf_data: r.result as string,
+                                                        },
+                                                      }
+                                                    : x,
+                                                ),
+                                              )
+                                            }
+                                          }
+                                          r.readAsDataURL(f)
+                                        }}
+                                      />
+                                    </label>
+                                    {prog.soporte_pdf_nombre && (
+                                      <button
+                                        type="button"
+                                        className="button button-secondary button-danger"
+                                        onClick={() => {
+                                          updateProgField('soporte_pdf_nombre', '')
+                                          updateProgField('soporte_pdf_data', '')
+                                        }}
+                                      >
+                                        <Trash2 size={13} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   )
                 })}
               </tbody>
             </table>
           </div>
+
+          {/* Bloque de Registro Fotográfico General de la Evaluación (Mínimo 1, Máximo 4 fotos cuando hay Parcial o No Cumple) */}
+          {evalItems.some(
+            (i) => i.calificacion === 'parcial' || i.calificacion === 'no_cumple',
+          ) && (
+            <div
+              style={{
+                marginTop: 18,
+                padding: 16,
+                borderRadius: 12,
+                border: '1.5px solid #f59e0b',
+                background: '#fffbeb',
+                display: 'grid',
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Camera size={18} style={{ color: '#b45309' }} />
+                  <div>
+                    <strong style={{ fontSize: 13.5, color: '#78350f', display: 'block' }}>
+                      Registro Fotográfico General de la Evaluación de Condiciones Físicas (Obligatorio: Mínimo 1 · Máximo 4 fotos)
+                    </strong>
+                    <small style={{ color: '#92400e', fontSize: 11.5 }}>
+                      Como la evaluación general presenta ítems con <em>Cumple parcialmente</em> o <em>No cumple</em>, adjunta de 1 a 4 fotografías de evidencia de los hallazgos encontrados en la sede.
+                    </small>
+                  </div>
+                </div>
+                <span className="plan-badge plan-month" style={{ fontWeight: 700 }}>
+                  {evalPhotoSlots.filter(Boolean).length} / 4 foto(s) cargada(s)
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                  gap: 12,
+                }}
+              >
+                {[0, 1, 2, 3].map((slotIdx) => {
+                  const slot = evalPhotoSlots[slotIdx]
+                  return (
+                    <div
+                      key={slotIdx}
+                      style={{
+                        border: '1px solid #fcd34d',
+                        borderRadius: 10,
+                        padding: 10,
+                        background: '#ffffff',
+                        display: 'grid',
+                        gap: 8,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <strong style={{ fontSize: 11.5, color: '#1e293b' }}>
+                          Fotografía #{slotIdx + 1} {slotIdx === 0 ? '(Obligatoria *)' : '(Opcional)'}
+                        </strong>
+                        {slot && (
+                          <button
+                            type="button"
+                            className="icon-button"
+                            title="Eliminar fotografía"
+                            onClick={() =>
+                              setEvalPhotoSlots((prev) =>
+                                prev.map((it, idx) => (idx === slotIdx ? null : it)),
+                              )
+                            }
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+
+                      {slot ? (
+                        <img
+                          src={slot.url}
+                          alt={slot.leyenda}
+                          onClick={() =>
+                            setPreviewPhoto({ src: slot.url, title: slot.leyenda })
+                          }
+                          style={{
+                            width: '100%',
+                            height: 120,
+                            objectFit: 'cover',
+                            borderRadius: 8,
+                            border: '1px solid #e2e8f0',
+                            cursor: 'pointer',
+                          }}
+                        />
+                      ) : (
+                        <label
+                          style={{
+                            height: 120,
+                            border: '1.5px dashed #cbd5e1',
+                            borderRadius: 8,
+                            display: 'grid',
+                            placeItems: 'center',
+                            textAlign: 'center',
+                            padding: 8,
+                            fontSize: 11.5,
+                            color: '#64748b',
+                            cursor: 'pointer',
+                            background: '#f8fafc',
+                          }}
+                        >
+                          <span>
+                            <Camera size={18} style={{ display: 'block', margin: '0 auto 4px' }} />
+                            Subir Foto #{slotIdx + 1}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={(e) =>
+                              handleUploadEvalPhoto(
+                                slotIdx,
+                                e.target.files?.[0] ?? null,
+                                `Evidencia Evaluación Física #${slotIdx + 1}`,
+                              )
+                            }
+                          />
+                        </label>
+                      )}
+
+                      <input
+                        value={slot?.leyenda || ''}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setEvalPhotoSlots((prev) =>
+                            prev.map((it, idx) =>
+                              idx === slotIdx && it ? { ...it, leyenda: val } : it,
+                            ),
+                          )
+                        }}
+                        placeholder={`Descripción foto #${slotIdx + 1}...`}
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          borderRadius: 6,
+                          border: '1px solid #cbd5e1',
+                          fontSize: 11.5,
+                        }}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
