@@ -414,6 +414,7 @@ export interface InfraPhysicalItemEval {
   fortaleza?: string
   debilidad?: string
   hallazgo?: string // Compatibilidad retroactiva (Debilidad)
+  fotos_hallazgo?: { id: string; leyenda: string; url: string }[] // Mínimo 1, Máximo 4 fotos por ítem con parcial o no_cumple
   // Datos de Programación de Actividad de Mantenimiento (Obligatorios si es Parcial o No Cumple)
   programacion_mantenimiento?: {
     clasificacion: ClasificacionMantenimientoInfra

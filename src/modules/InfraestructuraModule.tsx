@@ -687,21 +687,27 @@ export default function InfraestructuraModule({
     setModalMode(null)
   }
 
-  const handleUploadEvalPhoto = (slotIdx: number, file: File | null, defaultLabel: string) => {
+  const handleUploadItemPhoto = (
+    itemIdx: number,
+    slotIdx: number,
+    file: File | null,
+    defaultLabel: string,
+  ) => {
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        setEvalPhotoSlots((prev) =>
-          prev.map((item, idx) =>
-            idx === slotIdx
-              ? {
-                  id: `ft-eval-inf-${Date.now()}-${slotIdx}`,
-                  leyenda: item?.leyenda || defaultLabel || file.name,
-                  url: reader.result as string,
-                }
-              : item,
-          ),
+        setEvalItems((prev) =>
+          prev.map((item, idx) => {
+            if (idx !== itemIdx) return item
+            const currentPhotos = [...(item.fotos_hallazgo || [])]
+            currentPhotos[slotIdx] = {
+              id: `ft-eval-item-${Date.now()}-${itemIdx}-${slotIdx}`,
+              leyenda: currentPhotos[slotIdx]?.leyenda || defaultLabel || file.name,
+              url: reader.result as string,
+            }
+            return { ...item, fotos_hallazgo: currentPhotos }
+          }),
         )
       }
     }
@@ -737,18 +743,22 @@ export default function InfraestructuraModule({
         )
         return
       }
-    }
-
-    const validEvalPhotos = evalPhotoSlots.filter(
-      (p): p is { id: string; leyenda: string; url: string } => p !== null,
-    )
-
-    if (nonCompliantItems.length > 0 && (validEvalPhotos.length < 1 || validEvalPhotos.length > 4)) {
-      setEvalFormError(
-        'Como se presenta incumplimiento o cumplimiento parcial en la evaluación general de la sede, es obligatorio adjuntar mínimo 1 fotografía y máximo 4 fotografías en el Registro Fotográfico General de la Evaluación.',
+      const itemPhotos = (item.fotos_hallazgo || []).filter(
+        (p): p is { id: string; leyenda: string; url: string } => Boolean(p && p.url),
       )
-      return
+      if (itemPhotos.length < 1 || itemPhotos.length > 4) {
+        setEvalFormError(
+          `El ítem "${item.item_nombre}" presenta incumplimiento o cumplimiento parcial. Debes adjuntar mínimo 1 fotografía y máximo 4 fotografías en el Registro Fotográfico de ese criterio.`,
+        )
+        return
+      }
     }
+
+    const validEvalPhotos = evalItems.flatMap((it) =>
+      (it.fotos_hallazgo || []).filter(
+        (p): p is { id: string; leyenda: string; url: string } => Boolean(p && p.url),
+      ),
+    )
 
     updateDb((draft) => {
       const updatedItems = evalItems.map((item) => {
@@ -2424,6 +2434,183 @@ export default function InfraestructuraModule({
                                   </div>
                                 </div>
                               </div>
+
+                              {/* Debajo de la programación de la actividad: Registro Fotográfico de la Evaluación del Criterio (1 a 4 fotos) */}
+                              <div
+                                style={{
+                                  borderTop: '1.5px solid #bfdbfe',
+                                  paddingTop: 12,
+                                  display: 'grid',
+                                  gap: 10,
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap',
+                                    gap: 8,
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <Camera size={16} style={{ color: '#1d4ed8' }} />
+                                    <div>
+                                      <strong style={{ fontSize: 12.5, color: '#1e3a8a', display: 'block' }}>
+                                        Registro Fotográfico del Hallazgo en el Criterio (Obligatorio: Mínimo 1 · Máximo 4 fotos)
+                                      </strong>
+                                      <small style={{ color: '#475569', fontSize: 11 }}>
+                                        Adjunta de 1 a 4 fotografías de soporte para evidenciar el estado de <strong>{item.item_nombre}</strong>.
+                                      </small>
+                                    </div>
+                                  </div>
+                                  <span className="plan-badge plan-month" style={{ fontWeight: 700, fontSize: 10.5 }}>
+                                    {(item.fotos_hallazgo || []).filter((p) => Boolean(p && p.url)).length} / 4 foto(s)
+                                  </span>
+                                </div>
+
+                                <div
+                                  style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(195px, 1fr))',
+                                    gap: 10,
+                                  }}
+                                >
+                                  {[0, 1, 2, 3].map((slotIdx) => {
+                                    const slot = item.fotos_hallazgo?.[slotIdx]
+                                    return (
+                                      <div
+                                        key={slotIdx}
+                                        style={{
+                                          border: '1px solid #cbd5e1',
+                                          borderRadius: 8,
+                                          padding: 9,
+                                          background: '#ffffff',
+                                          display: 'grid',
+                                          gap: 6,
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                          }}
+                                        >
+                                          <strong style={{ fontSize: 11, color: '#1e293b' }}>
+                                            Foto #{slotIdx + 1} {slotIdx === 0 ? '(Obligatoria *)' : '(Opcional)'}
+                                          </strong>
+                                          {slot?.url && (
+                                            <button
+                                              type="button"
+                                              className="icon-button"
+                                              title="Eliminar fotografía"
+                                              onClick={() =>
+                                                setEvalItems((prev) =>
+                                                  prev.map((x, i) => {
+                                                    if (i !== idx) return x
+                                                    const nextPhotos = [...(x.fotos_hallazgo || [])]
+                                                    nextPhotos.splice(slotIdx, 1)
+                                                    return { ...x, fotos_hallazgo: nextPhotos }
+                                                  }),
+                                                )
+                                              }
+                                            >
+                                              <Trash2 size={12} />
+                                            </button>
+                                          )}
+                                        </div>
+
+                                        {slot?.url ? (
+                                          <img
+                                            src={slot.url}
+                                            alt={slot.leyenda}
+                                            onClick={() =>
+                                              setPreviewPhoto({
+                                                src: slot.url,
+                                                title: slot.leyenda,
+                                              })
+                                            }
+                                            style={{
+                                              width: '100%',
+                                              height: 105,
+                                              objectFit: 'cover',
+                                              borderRadius: 6,
+                                              border: '1px solid #e2e8f0',
+                                              cursor: 'pointer',
+                                            }}
+                                          />
+                                        ) : (
+                                          <label
+                                            style={{
+                                              height: 105,
+                                              border: '1.5px dashed #cbd5e1',
+                                              borderRadius: 6,
+                                              display: 'grid',
+                                              placeItems: 'center',
+                                              textAlign: 'center',
+                                              padding: 6,
+                                              fontSize: 11,
+                                              color: '#64748b',
+                                              cursor: 'pointer',
+                                              background: '#f8fafc',
+                                            }}
+                                          >
+                                            <span>
+                                              <Camera
+                                                size={16}
+                                                style={{ display: 'block', margin: '0 auto 4px' }}
+                                              />
+                                              Subir Foto #{slotIdx + 1}
+                                            </span>
+                                            <input
+                                              type="file"
+                                              accept="image/*"
+                                              style={{ display: 'none' }}
+                                              onChange={(e) =>
+                                                handleUploadItemPhoto(
+                                                  idx,
+                                                  slotIdx,
+                                                  e.target.files?.[0] ?? null,
+                                                  `${item.item_nombre.split('(')[0].trim()} - Foto #${slotIdx + 1}`,
+                                                )
+                                              }
+                                            />
+                                          </label>
+                                        )}
+
+                                        <input
+                                          value={slot?.leyenda || ''}
+                                          onChange={(e) => {
+                                            const val = e.target.value
+                                            setEvalItems((prev) =>
+                                              prev.map((x, i) => {
+                                                if (i !== idx) return x
+                                                const nextPhotos = [...(x.fotos_hallazgo || [])]
+                                                if (nextPhotos[slotIdx]) {
+                                                  nextPhotos[slotIdx] = {
+                                                    ...nextPhotos[slotIdx],
+                                                    leyenda: val,
+                                                  }
+                                                }
+                                                return { ...x, fotos_hallazgo: nextPhotos }
+                                              }),
+                                            )
+                                          }}
+                                          placeholder={`Descripción foto #${slotIdx + 1}...`}
+                                          style={{
+                                            width: '100%',
+                                            padding: '5px 8px',
+                                            borderRadius: 6,
+                                            border: '1px solid #cbd5e1',
+                                            fontSize: 11,
+                                          }}
+                                        />
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -2434,170 +2621,6 @@ export default function InfraestructuraModule({
               </tbody>
             </table>
           </div>
-
-          {/* Bloque de Registro Fotográfico General de la Evaluación (Mínimo 1, Máximo 4 fotos cuando hay Parcial o No Cumple) */}
-          {evalItems.some(
-            (i) => i.calificacion === 'parcial' || i.calificacion === 'no_cumple',
-          ) && (
-            <div
-              style={{
-                marginTop: 18,
-                padding: 16,
-                borderRadius: 12,
-                border: '1.5px solid #f59e0b',
-                background: '#fffbeb',
-                display: 'grid',
-                gap: 12,
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: 8,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Camera size={18} style={{ color: '#b45309' }} />
-                  <div>
-                    <strong style={{ fontSize: 13.5, color: '#78350f', display: 'block' }}>
-                      Registro Fotográfico General de la Evaluación de Condiciones Físicas (Obligatorio: Mínimo 1 · Máximo 4 fotos)
-                    </strong>
-                    <small style={{ color: '#92400e', fontSize: 11.5 }}>
-                      Como la evaluación general presenta ítems con <em>Cumple parcialmente</em> o <em>No cumple</em>, adjunta de 1 a 4 fotografías de evidencia de los hallazgos encontrados en la sede.
-                    </small>
-                  </div>
-                </div>
-                <span className="plan-badge plan-month" style={{ fontWeight: 700 }}>
-                  {evalPhotoSlots.filter(Boolean).length} / 4 foto(s) cargada(s)
-                </span>
-              </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-                  gap: 12,
-                }}
-              >
-                {[0, 1, 2, 3].map((slotIdx) => {
-                  const slot = evalPhotoSlots[slotIdx]
-                  return (
-                    <div
-                      key={slotIdx}
-                      style={{
-                        border: '1px solid #fcd34d',
-                        borderRadius: 10,
-                        padding: 10,
-                        background: '#ffffff',
-                        display: 'grid',
-                        gap: 8,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <strong style={{ fontSize: 11.5, color: '#1e293b' }}>
-                          Fotografía #{slotIdx + 1} {slotIdx === 0 ? '(Obligatoria *)' : '(Opcional)'}
-                        </strong>
-                        {slot && (
-                          <button
-                            type="button"
-                            className="icon-button"
-                            title="Eliminar fotografía"
-                            onClick={() =>
-                              setEvalPhotoSlots((prev) =>
-                                prev.map((it, idx) => (idx === slotIdx ? null : it)),
-                              )
-                            }
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        )}
-                      </div>
-
-                      {slot ? (
-                        <img
-                          src={slot.url}
-                          alt={slot.leyenda}
-                          onClick={() =>
-                            setPreviewPhoto({ src: slot.url, title: slot.leyenda })
-                          }
-                          style={{
-                            width: '100%',
-                            height: 120,
-                            objectFit: 'cover',
-                            borderRadius: 8,
-                            border: '1px solid #e2e8f0',
-                            cursor: 'pointer',
-                          }}
-                        />
-                      ) : (
-                        <label
-                          style={{
-                            height: 120,
-                            border: '1.5px dashed #cbd5e1',
-                            borderRadius: 8,
-                            display: 'grid',
-                            placeItems: 'center',
-                            textAlign: 'center',
-                            padding: 8,
-                            fontSize: 11.5,
-                            color: '#64748b',
-                            cursor: 'pointer',
-                            background: '#f8fafc',
-                          }}
-                        >
-                          <span>
-                            <Camera size={18} style={{ display: 'block', margin: '0 auto 4px' }} />
-                            Subir Foto #{slotIdx + 1}
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            onChange={(e) =>
-                              handleUploadEvalPhoto(
-                                slotIdx,
-                                e.target.files?.[0] ?? null,
-                                `Evidencia Evaluación Física #${slotIdx + 1}`,
-                              )
-                            }
-                          />
-                        </label>
-                      )}
-
-                      <input
-                        value={slot?.leyenda || ''}
-                        onChange={(e) => {
-                          const val = e.target.value
-                          setEvalPhotoSlots((prev) =>
-                            prev.map((it, idx) =>
-                              idx === slotIdx && it ? { ...it, leyenda: val } : it,
-                            ),
-                          )
-                        }}
-                        placeholder={`Descripción foto #${slotIdx + 1}...`}
-                        style={{
-                          width: '100%',
-                          padding: '6px 8px',
-                          borderRadius: 6,
-                          border: '1px solid #cbd5e1',
-                          fontSize: 11.5,
-                        }}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
         </section>
       )}
 
