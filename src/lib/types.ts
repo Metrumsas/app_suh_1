@@ -100,6 +100,9 @@ export interface Sede {
   capacidad_instalada_resumen: string
   area_m2: number
   pisos_niveles: number
+  cuartos_ambientes?: number
+  banos_unidades?: number
+  descripcion_pisos?: string
   tenencia_inmueble?: 'Propio' | 'Arrendado' | 'Comodato'
   accesibilidad_pmr?: boolean
   planta_electrica?: 'SÍ' | 'NO' | string

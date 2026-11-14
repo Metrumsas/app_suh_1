@@ -154,6 +154,9 @@ export default function AdministracionModule({
   const [editSedeVencHab, setEditSedeVencHab] = useState('')
   const [editSedeCapacidad, setEditSedeCapacidad] = useState('')
   const [editSedePisos, setEditSedePisos] = useState('1')
+  const [editSedeCuartos, setEditSedeCuartos] = useState('7')
+  const [editSedeBanos, setEditSedeBanos] = useState('3')
+  const [editSedeDescPisos, setEditSedeDescPisos] = useState('')
   const [editSedeTenencia, setEditSedeTenencia] = useState<'Propio' | 'Arrendado' | 'Comodato'>('Arrendado')
   const [editSedePmr, setEditSedePmr] = useState(true)
   const [editSedePlanta, setEditSedePlanta] = useState<'SÍ' | 'NO'>('SÍ')
@@ -1547,6 +1550,9 @@ export default function AdministracionModule({
                         setEditSedeTel(sede.telefono)
                         setEditSedeArea(String(sede.area_m2 || 0))
                         setEditSedePisos(String(sede.pisos_niveles || 1))
+                        setEditSedeCuartos(String(sede.cuartos_ambientes || 7))
+                        setEditSedeBanos(String(sede.banos_unidades || 3))
+                        setEditSedeDescPisos(sede.descripcion_pisos || '')
                         setEditSedeTenencia(sede.tenencia_inmueble || 'Arrendado')
                         setEditSedePmr(sede.accesibilidad_pmr ?? true)
                         setEditSedePlanta(
@@ -3741,69 +3747,13 @@ export default function AdministracionModule({
                         <dt>Municipio / Localidad</dt>
                         <dd>{selectedSedeFicha.municipio || selectedSedeFicha.ciudad}</dd>
                       </div>
-                      <div className="record-field-wide">
+                      <div>
                         <dt>Dirección Física</dt>
                         <dd>{selectedSedeFicha.direccion}</dd>
                       </div>
                       <div>
                         <dt>Teléfono de Contacto</dt>
-                        <dd>{selectedSedeFicha.telefono}</dd>
-                      </div>
-                      <div>
-                        <dt>Área Construida y Niveles</dt>
-                        <dd>
-                          <strong>{selectedSedeFicha.area_m2} m²</strong> ·{' '}
-                          {selectedSedeFicha.pisos_niveles || 1} piso(s)
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Tenencia del Inmueble y Accesibilidad PMR</dt>
-                        <dd>
-                          {selectedSedeFicha.tenencia_inmueble || 'Arrendado'} ·{' '}
-                          <span
-                            className={`plan-badge ${
-                              (selectedSedeFicha.accesibilidad_pmr ?? true)
-                                ? 'plan-complete'
-                                : 'plan-overdue'
-                            }`}
-                          >
-                            {(selectedSedeFicha.accesibilidad_pmr ?? true)
-                              ? 'Accesible PMR (SÍ)'
-                              : 'Sin PMR'}
-                          </span>
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Planta Eléctrica / Respaldo UPS</dt>
-                        <dd>
-                          <span
-                            className={`plan-badge ${
-                              selectedSedeFicha.planta_electrica === 'NO'
-                                ? 'plan-future'
-                                : 'plan-complete'
-                            }`}
-                          >
-                            {selectedSedeFicha.planta_electrica === 'NO' ? 'NO' : 'SÍ'}
-                          </span>
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Tanque de Reserva de Agua Potable</dt>
-                        <dd>
-                          <span
-                            className={`plan-badge ${
-                              selectedSedeFicha.tanque_reserva_agua === 'NO'
-                                ? 'plan-future'
-                                : 'plan-complete'
-                            }`}
-                          >
-                            {selectedSedeFicha.tanque_reserva_agua === 'NO' ? 'NO' : 'SÍ'}
-                          </span>
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Red de Gases Medicinales</dt>
-                        <dd>{selectedSedeFicha.red_gases_medicinales || 'Cilindros portátiles'}</dd>
+                        <dd>{selectedSedeFicha.telefono || 'No registrado'}</dd>
                       </div>
                       <div>
                         <dt>Director / Responsable de la Sede</dt>
@@ -3835,6 +3785,129 @@ export default function AdministracionModule({
                               ).label
                             }
                           </span>
+                        </dd>
+                      </div>
+
+                      {/* BLOQUE AGRUPADO DE DESCRIPCIÓN DE LA CONSTRUCCIÓN (Área Construida | Pisos | Cuartos | Baños + Descripción del Piso y Redes) */}
+                      <div className="record-field-wide">
+                        <dt>Descripción de la Construcción y Condiciones Técnicas del Inmueble</dt>
+                        <dd style={{ marginTop: 8, display: 'grid', gap: 10 }}>
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                              borderTop: '1.5px solid #475569',
+                              borderBottom: '1.5px solid #475569',
+                              background: '#ffffff',
+                            }}
+                          >
+                            <div
+                              style={{
+                                padding: '8px 12px',
+                                borderRight: '1px solid #cbd5e1',
+                              }}
+                            >
+                              <small style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b' }}>
+                                Área Construida
+                              </small>
+                              <strong style={{ fontSize: 14, color: '#0f172a' }}>
+                                {selectedSedeFicha.area_m2} m²
+                              </strong>
+                            </div>
+                            <div
+                              style={{
+                                padding: '8px 12px',
+                                borderRight: '1px solid #cbd5e1',
+                              }}
+                            >
+                              <small style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b' }}>
+                                Pisos / Niveles
+                              </small>
+                              <strong style={{ fontSize: 14, color: '#0f172a' }}>
+                                {selectedSedeFicha.pisos_niveles || 1}
+                              </strong>
+                            </div>
+                            <div
+                              style={{
+                                padding: '8px 12px',
+                                borderRight: '1px solid #cbd5e1',
+                              }}
+                            >
+                              <small style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b' }}>
+                                Cuartos / Ambientes
+                              </small>
+                              <strong style={{ fontSize: 14, color: '#0f172a' }}>
+                                {selectedSedeFicha.cuartos_ambientes || 7}
+                              </strong>
+                            </div>
+                            <div style={{ padding: '8px 12px' }}>
+                              <small style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b' }}>
+                                Baños
+                              </small>
+                              <strong style={{ fontSize: 14, color: '#0f172a' }}>
+                                {selectedSedeFicha.banos_unidades || 3}
+                              </strong>
+                            </div>
+                          </div>
+
+                          {selectedSedeFicha.descripcion_pisos && (
+                            <div
+                              style={{
+                                padding: '8px 12px',
+                                borderRadius: 7,
+                                background: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                fontSize: 12,
+                                color: '#334155',
+                              }}
+                            >
+                              <strong>Descripción del Piso / Distribución:</strong>{' '}
+                              {selectedSedeFicha.descripcion_pisos}
+                            </div>
+                          )}
+
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                              gap: 8,
+                              fontSize: 12,
+                            }}
+                          >
+                            <div style={{ padding: '6px 10px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                              <small style={{ color: '#64748b', display: 'block', fontSize: 10.5 }}>
+                                TENENCIA Y ACCESIBILIDAD PMR
+                              </small>
+                              <strong>
+                                {selectedSedeFicha.tenencia_inmueble || 'Arrendado'} · PMR:{' '}
+                                {(selectedSedeFicha.accesibilidad_pmr ?? true) ? 'SÍ' : 'NO'}
+                              </strong>
+                            </div>
+                            <div style={{ padding: '6px 10px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                              <small style={{ color: '#64748b', display: 'block', fontSize: 10.5 }}>
+                                PLANTA ELÉCTRICA / UPS
+                              </small>
+                              <strong>
+                                {selectedSedeFicha.planta_electrica === 'NO' ? 'NO' : 'SÍ'}
+                              </strong>
+                            </div>
+                            <div style={{ padding: '6px 10px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                              <small style={{ color: '#64748b', display: 'block', fontSize: 10.5 }}>
+                                TANQUE RESERVA AGUA POTABLE
+                              </small>
+                              <strong>
+                                {selectedSedeFicha.tanque_reserva_agua === 'NO' ? 'NO' : 'SÍ'}
+                              </strong>
+                            </div>
+                            <div style={{ padding: '6px 10px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                              <small style={{ color: '#64748b', display: 'block', fontSize: 10.5 }}>
+                                RED DE GASES MEDICINALES
+                              </small>
+                              <strong>
+                                {selectedSedeFicha.red_gases_medicinales || 'Cilindros portátiles'}
+                              </strong>
+                            </div>
+                          </div>
                         </dd>
                       </div>
                       <div className="record-field-wide">
@@ -4556,6 +4629,9 @@ export default function AdministracionModule({
                       target.telefono = editSedeTel.trim()
                       target.area_m2 = Number(editSedeArea) || target.area_m2
                       target.pisos_niveles = Number(editSedePisos) || 1
+                      target.cuartos_ambientes = Number(editSedeCuartos) || 1
+                      target.banos_unidades = Number(editSedeBanos) || 1
+                      target.descripcion_pisos = editSedeDescPisos.trim()
                       target.tenencia_inmueble = editSedeTenencia
                       target.accesibilidad_pmr = editSedePmr
                       target.planta_electrica = editSedePlanta
@@ -4612,94 +4688,20 @@ export default function AdministracionModule({
                           onChange={(e) => setEditSedeMun(e.target.value)}
                         />
                       </label>
-                      <label className="form-field plan-wide">
-                        <span>Dirección Física</span>
+                      <label className="form-field">
+                        <span>Dirección Física de la Sede *</span>
                         <input
+                          required
                           value={editSedeDir}
                           onChange={(e) => setEditSedeDir(e.target.value)}
                         />
                       </label>
                       <label className="form-field">
-                        <span>Teléfono</span>
+                        <span>Teléfono de Contacto</span>
                         <input
                           value={editSedeTel}
                           onChange={(e) => setEditSedeTel(e.target.value)}
                         />
-                      </label>
-                      <label className="form-field">
-                        <span>Área Construida (m²)</span>
-                        <input
-                          type="number"
-                          value={editSedeArea}
-                          onChange={(e) => setEditSedeArea(e.target.value)}
-                        />
-                      </label>
-                      <label className="form-field">
-                        <span>Pisos / Niveles del Inmueble</span>
-                        <input
-                          type="number"
-                          min="1"
-                          value={editSedePisos}
-                          onChange={(e) => setEditSedePisos(e.target.value)}
-                        />
-                      </label>
-                      <label className="form-field">
-                        <span>Tenencia del Inmueble</span>
-                        <select
-                          value={editSedeTenencia}
-                          onChange={(e) =>
-                            setEditSedeTenencia(e.target.value as 'Propio' | 'Arrendado' | 'Comodato')
-                          }
-                        >
-                          <option value="Propio">Propio</option>
-                          <option value="Arrendado">Arrendado</option>
-                          <option value="Comodato">Comodato</option>
-                        </select>
-                      </label>
-                      <label className="form-field">
-                        <span>Accesibilidad PMR (Rampa / Ascensor)</span>
-                        <select
-                          value={editSedePmr ? 'SI' : 'NO'}
-                          onChange={(e) => setEditSedePmr(e.target.value === 'SI')}
-                        >
-                          <option value="SI">SÍ — Cumple Accesibilidad PMR</option>
-                          <option value="NO">NO</option>
-                        </select>
-                      </label>
-                      <label className="form-field">
-                        <span>Planta Eléctrica / UPS de Respaldo</span>
-                        <select
-                          value={editSedePlanta}
-                          onChange={(e) => setEditSedePlanta(e.target.value as 'SÍ' | 'NO')}
-                        >
-                          <option value="SÍ">SÍ</option>
-                          <option value="NO">NO</option>
-                        </select>
-                      </label>
-                      <label className="form-field">
-                        <span>Tanque de Reserva de Agua Potable</span>
-                        <select
-                          value={editSedeTanque}
-                          onChange={(e) => setEditSedeTanque(e.target.value as 'SÍ' | 'NO')}
-                        >
-                          <option value="SÍ">SÍ</option>
-                          <option value="NO">NO</option>
-                        </select>
-                      </label>
-                      <label className="form-field">
-                        <span>Red de Gases Medicinales</span>
-                        <select
-                          value={editSedeGases}
-                          onChange={(e) =>
-                            setEditSedeGases(
-                              e.target.value as 'Centralizada' | 'Cilindros portátiles' | 'No aplica',
-                            )
-                          }
-                        >
-                          <option value="Centralizada">Red Centralizada</option>
-                          <option value="Cilindros portátiles">Cilindros portátiles</option>
-                          <option value="No aplica">No aplica</option>
-                        </select>
                       </label>
                       <label className="form-field">
                         <span>Director / Responsable</span>
@@ -4716,7 +4718,7 @@ export default function AdministracionModule({
                           onChange={(e) => setEditSedeInscripcion(e.target.value)}
                         />
                       </label>
-                      <label className="form-field">
+                      <label className="form-field plan-wide">
                         <span>Fecha de Vencimiento Habilitación</span>
                         <input
                           type="date"
@@ -4724,6 +4726,230 @@ export default function AdministracionModule({
                           onChange={(e) => setEditSedeVencHab(e.target.value)}
                         />
                       </label>
+
+                      {/* BLOQUE AGRUPADO DE DESCRIPCIÓN DE LA CONSTRUCCIÓN EN MODO EDICIÓN */}
+                      <div
+                        className="plan-wide"
+                        style={{
+                          marginTop: 6,
+                          border: '1px solid #cbd5e1',
+                          borderRadius: 12,
+                          padding: 16,
+                          background: '#f8fafc',
+                          display: 'grid',
+                          gap: 14,
+                        }}
+                      >
+                        <div>
+                          <strong style={{ fontSize: 13.5, color: '#0f172a', display: 'block' }}>
+                            Descripción de la Construcción y Condiciones Técnicas del Inmueble
+                          </strong>
+                          <small style={{ color: '#64748b', fontSize: 11.5 }}>
+                            Área construida, Pisos, Cuartos/Ambientes, Baños, descripción del piso y redes de respaldo.
+                          </small>
+                        </div>
+
+                        <div
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                            borderTop: '1.5px solid #475569',
+                            borderBottom: '1.5px solid #475569',
+                            background: '#ffffff',
+                          }}
+                        >
+                          <label
+                            style={{
+                              padding: '10px 14px',
+                              borderRight: '1px solid #cbd5e1',
+                              display: 'grid',
+                              gap: 4,
+                            }}
+                          >
+                            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b' }}>
+                              Área Construida (m²)
+                            </span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="1"
+                              value={editSedeArea}
+                              onChange={(e) => setEditSedeArea(e.target.value)}
+                              style={{
+                                border: '1px solid #cbd5e1',
+                                borderRadius: 6,
+                                height: 36,
+                                padding: '0 10px',
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: '#0f172a',
+                              }}
+                            />
+                          </label>
+
+                          <label
+                            style={{
+                              padding: '10px 14px',
+                              borderRight: '1px solid #cbd5e1',
+                              display: 'grid',
+                              gap: 4,
+                            }}
+                          >
+                            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b' }}>
+                              Pisos / Niveles
+                            </span>
+                            <input
+                              type="number"
+                              min="1"
+                              value={editSedePisos}
+                              onChange={(e) => setEditSedePisos(e.target.value)}
+                              style={{
+                                border: '1px solid #cbd5e1',
+                                borderRadius: 6,
+                                height: 36,
+                                padding: '0 10px',
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: '#0f172a',
+                              }}
+                            />
+                          </label>
+
+                          <label
+                            style={{
+                              padding: '10px 14px',
+                              borderRight: '1px solid #cbd5e1',
+                              display: 'grid',
+                              gap: 4,
+                            }}
+                          >
+                            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b' }}>
+                              Cuartos / Ambientes
+                            </span>
+                            <input
+                              type="number"
+                              min="1"
+                              value={editSedeCuartos}
+                              onChange={(e) => setEditSedeCuartos(e.target.value)}
+                              style={{
+                                border: '1px solid #cbd5e1',
+                                borderRadius: 6,
+                                height: 36,
+                                padding: '0 10px',
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: '#0f172a',
+                              }}
+                            />
+                          </label>
+
+                          <label
+                            style={{
+                              padding: '10px 14px',
+                              display: 'grid',
+                              gap: 4,
+                            }}
+                          >
+                            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b' }}>
+                              Baños / Unidades Sanitarias
+                            </span>
+                            <input
+                              type="number"
+                              min="1"
+                              value={editSedeBanos}
+                              onChange={(e) => setEditSedeBanos(e.target.value)}
+                              style={{
+                                border: '1px solid #cbd5e1',
+                                borderRadius: 6,
+                                height: 36,
+                                padding: '0 10px',
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: '#0f172a',
+                              }}
+                            />
+                          </label>
+                        </div>
+
+                        <div className="plan-form-grid">
+                          <label className="form-field plan-wide">
+                            <span>Descripción del Piso / Distribución por Niveles de la Construcción</span>
+                            <textarea
+                              value={editSedeDescPisos}
+                              onChange={(e) => setEditSedeDescPisos(e.target.value)}
+                              placeholder="Describe cómo está distribuido cada piso (ej. Piso 1: Recepción, sala de espera, consultorios y baños PMR)..."
+                            />
+                          </label>
+
+                          <label className="form-field">
+                            <span>Tenencia del Inmueble</span>
+                            <select
+                              value={editSedeTenencia}
+                              onChange={(e) =>
+                                setEditSedeTenencia(
+                                  e.target.value as 'Propio' | 'Arrendado' | 'Comodato',
+                                )
+                              }
+                            >
+                              <option value="Propio">Propio</option>
+                              <option value="Arrendado">Arrendado</option>
+                              <option value="Comodato">Comodato</option>
+                            </select>
+                          </label>
+
+                          <label className="form-field">
+                            <span>Accesibilidad PMR (Rampa / Ascensor)</span>
+                            <select
+                              value={editSedePmr ? 'SI' : 'NO'}
+                              onChange={(e) => setEditSedePmr(e.target.value === 'SI')}
+                            >
+                              <option value="SI">SÍ — Cumple Accesibilidad PMR</option>
+                              <option value="NO">NO</option>
+                            </select>
+                          </label>
+
+                          <label className="form-field">
+                            <span>Planta Eléctrica / UPS de Respaldo</span>
+                            <select
+                              value={editSedePlanta}
+                              onChange={(e) => setEditSedePlanta(e.target.value as 'SÍ' | 'NO')}
+                            >
+                              <option value="SÍ">SÍ</option>
+                              <option value="NO">NO</option>
+                            </select>
+                          </label>
+
+                          <label className="form-field">
+                            <span>Tanque de Reserva de Agua Potable</span>
+                            <select
+                              value={editSedeTanque}
+                              onChange={(e) => setEditSedeTanque(e.target.value as 'SÍ' | 'NO')}
+                            >
+                              <option value="SÍ">SÍ</option>
+                              <option value="NO">NO</option>
+                            </select>
+                          </label>
+
+                          <label className="form-field plan-wide">
+                            <span>Red de Gases Medicinales</span>
+                            <select
+                              value={editSedeGases}
+                              onChange={(e) =>
+                                setEditSedeGases(
+                                  e.target.value as
+                                    | 'Centralizada'
+                                    | 'Cilindros portátiles'
+                                    | 'No aplica',
+                                )
+                              }
+                            >
+                              <option value="Centralizada">Red Centralizada</option>
+                              <option value="Cilindros portátiles">Cilindros portátiles</option>
+                              <option value="No aplica">No aplica</option>
+                            </select>
+                          </label>
+                        </div>
+                      </div>
                     </div>
                   </section>
 

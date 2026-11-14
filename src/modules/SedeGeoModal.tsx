@@ -39,8 +39,13 @@ export default function SedeGeoModal({
   const [telefono, setTelefono] = useState('')
   const [director, setDirector] = useState(currentUser.nombre_completo)
   const [responsableCorreo, setResponsableCorreo] = useState(currentUser.correo)
-  const [areaM2, setAreaM2] = useState('520')
+  const [areaM2, setAreaM2] = useState('107.58')
   const [pisosNiveles, setPisosNiveles] = useState('1')
+  const [cuartosAmbientes, setCuartosAmbientes] = useState('7')
+  const [banosUnidades, setBanosUnidades] = useState('3')
+  const [descripcionPisos, setDescripcionPisos] = useState(
+    'Piso 1: Recepción, sala de espera, consultorios, cuarto técnico y baterías sanitarias PMR.',
+  )
   const [tenenciaInmueble, setTenenciaInmueble] = useState<'Propio' | 'Arrendado' | 'Comodato'>('Arrendado')
   const [accesibilidadPmr, setAccesibilidadPmr] = useState(true)
   const [plantaElectrica, setPlantaElectrica] = useState<'SÍ' | 'NO'>('SÍ')
@@ -156,8 +161,11 @@ export default function SedeGeoModal({
         descripcion_infraestructura: `Habilitación ${terrObj.tipo_entidad} ante ${terrObj.ente_territorial_salud}. Ubicación: ${municipio.trim()}, ${terrObj.nombre} (${direccion.trim()}).`,
         capacidad_instalada_resumen: resumenCapacidad3100,
         capacidad_instalada_cantidades: { ...capacidadCantidades },
-        area_m2: Number(areaM2) || 500,
+        area_m2: Number(areaM2) || 100,
         pisos_niveles: Number(pisosNiveles) || 1,
+        cuartos_ambientes: Number(cuartosAmbientes) || 1,
+        banos_unidades: Number(banosUnidades) || 1,
+        descripcion_pisos: descripcionPisos.trim(),
         tenencia_inmueble: tenenciaInmueble,
         accesibilidad_pmr: accesibilidadPmr,
         planta_electrica: plantaElectrica,
@@ -359,7 +367,7 @@ export default function SedeGeoModal({
                   />
                 </label>
 
-                <label className="form-field plan-wide">
+                <label className="form-field">
                   <span>
                     Dirección Física de la Sede <b>*</b>
                   </span>
@@ -367,7 +375,7 @@ export default function SedeGeoModal({
                     required
                     value={direccion}
                     onChange={(e) => setDireccion(e.target.value)}
-                    placeholder="Ej. Cra. 35 # 52 - 18, Edificio Médico Piso 3"
+                    placeholder="Ej. CL 22 N. 14-05 Barrio Alcázares"
                   />
                 </label>
 
@@ -378,88 +386,6 @@ export default function SedeGeoModal({
                     onChange={(e) => setTelefono(e.target.value)}
                     placeholder="(607) 643 1000"
                   />
-                </label>
-
-                <label className="form-field">
-                  <span>Área Construida (m²)</span>
-                  <input
-                    type="number"
-                    value={areaM2}
-                    onChange={(e) => setAreaM2(e.target.value)}
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>Pisos / Niveles del Inmueble</span>
-                  <input
-                    type="number"
-                    min="1"
-                    value={pisosNiveles}
-                    onChange={(e) => setPisosNiveles(e.target.value)}
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>Tenencia del Inmueble</span>
-                  <select
-                    value={tenenciaInmueble}
-                    onChange={(e) =>
-                      setTenenciaInmueble(e.target.value as 'Propio' | 'Arrendado' | 'Comodato')
-                    }
-                  >
-                    <option value="Propio">Propio</option>
-                    <option value="Arrendado">Arrendado</option>
-                    <option value="Comodato">Comodato</option>
-                  </select>
-                </label>
-
-                <label className="form-field">
-                  <span>Accesibilidad PMR (Rampa / Ascensor)</span>
-                  <select
-                    value={accesibilidadPmr ? 'SI' : 'NO'}
-                    onChange={(e) => setAccesibilidadPmr(e.target.value === 'SI')}
-                  >
-                    <option value="SI">SÍ — Cumple Accesibilidad PMR</option>
-                    <option value="NO">NO</option>
-                  </select>
-                </label>
-
-                <label className="form-field">
-                  <span>Planta Eléctrica / UPS de Respaldo</span>
-                  <select
-                    value={plantaElectrica}
-                    onChange={(e) => setPlantaElectrica(e.target.value as 'SÍ' | 'NO')}
-                  >
-                    <option value="SÍ">SÍ</option>
-                    <option value="NO">NO</option>
-                  </select>
-                </label>
-
-                <label className="form-field">
-                  <span>Tanque de Reserva de Agua Potable</span>
-                  <select
-                    value={tanqueReservaAgua}
-                    onChange={(e) => setTanqueReservaAgua(e.target.value as 'SÍ' | 'NO')}
-                  >
-                    <option value="SÍ">SÍ</option>
-                    <option value="NO">NO</option>
-                  </select>
-                </label>
-
-                <label className="form-field">
-                  <span>Red de Gases Medicinales</span>
-                  <select
-                    value={redGasesMedicinales}
-                    onChange={(e) =>
-                      setRedGasesMedicinales(
-                        e.target.value as 'Centralizada' | 'Cilindros portátiles' | 'No aplica',
-                      )
-                    }
-                  >
-                    <option value="Centralizada">Red Centralizada</option>
-                    <option value="Cilindros portátiles">Cilindros portátiles</option>
-                    <option value="No aplica">No aplica</option>
-                  </select>
                 </label>
 
                 <label className="form-field">
@@ -511,6 +437,229 @@ export default function SedeGeoModal({
                     onChange={(e) => setFechaVencimientoHab(e.target.value)}
                   />
                 </label>
+
+                {/* BLOQUE AGRUPADO: DESCRIPCIÓN TÉCNICA DE LA CONSTRUCCIÓN E INFRAESTRUCTURA DEL INMUEBLE */}
+                <div
+                  className="plan-wide"
+                  style={{
+                    marginTop: 6,
+                    border: '1px solid #cbd5e1',
+                    borderRadius: 12,
+                    padding: 16,
+                    background: '#f8fafc',
+                    display: 'grid',
+                    gap: 14,
+                  }}
+                >
+                  <div>
+                    <strong style={{ fontSize: 13.5, color: '#0f172a', display: 'block' }}>
+                      Descripción de la Construcción y Condiciones Técnicas del Inmueble
+                    </strong>
+                    <small style={{ color: '#64748b', fontSize: 11.5 }}>
+                      Especificaciones arquitectónicas de la edificación (Área construida, Pisos, Cuartos/Ambientes, Baños, descripción por piso y redes de respaldo).
+                    </small>
+                  </div>
+
+                  {/* Barra de 4 columnas idéntica al modelo compartido (Área Construida | Pisos | Cuartos | Baños) */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                      borderTop: '1.5px solid #475569',
+                      borderBottom: '1.5px solid #475569',
+                      background: '#ffffff',
+                    }}
+                  >
+                    <label
+                      style={{
+                        padding: '10px 14px',
+                        borderRight: '1px solid #cbd5e1',
+                        display: 'grid',
+                        gap: 4,
+                      }}
+                    >
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b' }}>
+                        Área Construida (m²)
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="1"
+                        value={areaM2}
+                        onChange={(e) => setAreaM2(e.target.value)}
+                        style={{
+                          border: '1px solid #cbd5e1',
+                          borderRadius: 6,
+                          height: 36,
+                          padding: '0 10px',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: '#0f172a',
+                        }}
+                      />
+                    </label>
+
+                    <label
+                      style={{
+                        padding: '10px 14px',
+                        borderRight: '1px solid #cbd5e1',
+                        display: 'grid',
+                        gap: 4,
+                      }}
+                    >
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b' }}>
+                        Pisos / Niveles
+                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={pisosNiveles}
+                        onChange={(e) => setPisosNiveles(e.target.value)}
+                        style={{
+                          border: '1px solid #cbd5e1',
+                          borderRadius: 6,
+                          height: 36,
+                          padding: '0 10px',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: '#0f172a',
+                        }}
+                      />
+                    </label>
+
+                    <label
+                      style={{
+                        padding: '10px 14px',
+                        borderRight: '1px solid #cbd5e1',
+                        display: 'grid',
+                        gap: 4,
+                      }}
+                    >
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b' }}>
+                        Cuartos / Ambientes
+                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={cuartosAmbientes}
+                        onChange={(e) => setCuartosAmbientes(e.target.value)}
+                        style={{
+                          border: '1px solid #cbd5e1',
+                          borderRadius: 6,
+                          height: 36,
+                          padding: '0 10px',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: '#0f172a',
+                        }}
+                      />
+                    </label>
+
+                    <label
+                      style={{
+                        padding: '10px 14px',
+                        display: 'grid',
+                        gap: 4,
+                      }}
+                    >
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b' }}>
+                        Baños / Unidades Sanitarias
+                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={banosUnidades}
+                        onChange={(e) => setBanosUnidades(e.target.value)}
+                        style={{
+                          border: '1px solid #cbd5e1',
+                          borderRadius: 6,
+                          height: 36,
+                          padding: '0 10px',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: '#0f172a',
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Descripción de los pisos y demás datos agrupados de la construcción */}
+                  <div className="plan-form-grid">
+                    <label className="form-field plan-wide">
+                      <span>Descripción del Piso / Distribución por Niveles de la Construcción</span>
+                      <textarea
+                        value={descripcionPisos}
+                        onChange={(e) => setDescripcionPisos(e.target.value)}
+                        placeholder="Describe cómo está distribuido cada piso (ej. Piso 1: Recepción, sala de espera, 4 consultorios, toma de muestras y 3 baños PMR)..."
+                      />
+                    </label>
+
+                    <label className="form-field">
+                      <span>Tenencia del Inmueble</span>
+                      <select
+                        value={tenenciaInmueble}
+                        onChange={(e) =>
+                          setTenenciaInmueble(
+                            e.target.value as 'Propio' | 'Arrendado' | 'Comodato',
+                          )
+                        }
+                      >
+                        <option value="Propio">Propio</option>
+                        <option value="Arrendado">Arrendado</option>
+                        <option value="Comodato">Comodato</option>
+                      </select>
+                    </label>
+
+                    <label className="form-field">
+                      <span>Accesibilidad PMR (Rampa / Ascensor)</span>
+                      <select
+                        value={accesibilidadPmr ? 'SI' : 'NO'}
+                        onChange={(e) => setAccesibilidadPmr(e.target.value === 'SI')}
+                      >
+                        <option value="SI">SÍ — Cumple Accesibilidad PMR</option>
+                        <option value="NO">NO</option>
+                      </select>
+                    </label>
+
+                    <label className="form-field">
+                      <span>Planta Eléctrica / UPS de Respaldo</span>
+                      <select
+                        value={plantaElectrica}
+                        onChange={(e) => setPlantaElectrica(e.target.value as 'SÍ' | 'NO')}
+                      >
+                        <option value="SÍ">SÍ</option>
+                        <option value="NO">NO</option>
+                      </select>
+                    </label>
+
+                    <label className="form-field">
+                      <span>Tanque de Reserva de Agua Potable</span>
+                      <select
+                        value={tanqueReservaAgua}
+                        onChange={(e) => setTanqueReservaAgua(e.target.value as 'SÍ' | 'NO')}
+                      >
+                        <option value="SÍ">SÍ</option>
+                        <option value="NO">NO</option>
+                      </select>
+                    </label>
+
+                    <label className="form-field plan-wide">
+                      <span>Red de Gases Medicinales</span>
+                      <select
+                        value={redGasesMedicinales}
+                        onChange={(e) =>
+                          setRedGasesMedicinales(
+                            e.target.value as 'Centralizada' | 'Cilindros portátiles' | 'No aplica',
+                          )
+                        }
+                      >
+                        <option value="Centralizada">Red Centralizada</option>
+                        <option value="Cilindros portátiles">Cilindros portátiles</option>
+                        <option value="No aplica">No aplica</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
 
                 <div className="uiaf-callout plan-wide" style={{ margin: '6px 0 0' }}>
                   <span>

@@ -324,10 +324,16 @@ export function generateSedeFichaTecnicaPdf(
         sede.telefono || 'No registrado',
       ],
       [
-        'Área Construida y Niveles',
+        'Área Construida y Pisos',
         `${sede.area_m2} m² · ${sede.pisos_niveles || 1} piso(s)`,
+        'Cuartos / Ambientes y Baños',
+        `${sede.cuartos_ambientes || 7} cuarto(s) · ${sede.banos_unidades || 3} baño(s)`,
+      ],
+      [
         'Tenencia y Accesibilidad PMR',
         `${sede.tenencia_inmueble || 'Arrendado'} · PMR: ${(sede.accesibilidad_pmr ?? true) ? 'SÍ' : 'NO'}`,
+        'Distribución por Piso',
+        sede.descripcion_pisos || 'Distribución general de consultorios y áreas de apoyo.',
       ],
       [
         'Planta Eléctrica / UPS',
