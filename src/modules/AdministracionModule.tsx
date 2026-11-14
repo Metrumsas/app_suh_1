@@ -419,9 +419,7 @@ export default function AdministracionModule({
   const noCumpleCount = totalCount - cumpleCount
   const criticoCount = evaluatedAll.filter((x) => x.eval.semaforo.level === 'critico').length
   const prioridadCount = evaluatedAll.filter((x) => x.eval.semaforo.level === 'prioridad').length
-  const alertasDiariasCount = evaluatedAll.filter((x) =>
-    x.eval.alertaCorreo.frecuencia.startsWith('DIARIA'),
-  ).length
+  const vencidosCount = evaluatedAll.filter((x) => x.eval.semaforo.days < 0).length
   const pctCumplimiento = totalCount > 0 ? Math.round((cumpleCount / totalCount) * 1000) / 10 : 0
 
   // Sincronizar / Garantizar que NACIONAL y cada Sede Operativa tengan ÚNICAMENTE los 35 criterios oficiales de la lista (más los nuevos que cree manualmente el usuario)
@@ -1153,16 +1151,16 @@ export default function AdministracionModule({
 
         <article className="panel complaint-kpi complaint-kpi-red">
           <div className="complaint-kpi-heading">
-            <h2>No Cumplen y Alertas Diarias</h2>
+            <h2>No Cumplen y Vencidos</h2>
             <span className="complaint-kpi-icon">
               <BellRing size={19} />
             </span>
           </div>
           <strong>
-            {noCumpleCount} No Cumplen ({alertasDiariasCount} con Alerta Diaria)
+            {noCumpleCount} No Cumplen ({vencidosCount} Vencidos)
           </strong>
           <p>
-            Tras el vencimiento se avisa todos los días al correo y el estado no cambia hasta cumplir.
+            {vencidosCount} vencido(s) · {Math.max(0, noCumpleCount - vencidosCount)} pendiente(s) de ejecución dentro del plazo.
           </p>
         </article>
 
