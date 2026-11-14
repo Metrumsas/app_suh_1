@@ -176,6 +176,134 @@ export default function App() {
     return () => window.clearTimeout(t)
   }, [toast])
 
+  // Visor directo de documentos PDF desde enlaces interactivos de la Ficha Técnica PDF (?ver_plano_sede=ID o ?ver_distintivo_sede=ID&srv=SRV_ID)
+  const urlParams = new URLSearchParams(window.location.search)
+  const verPlanoSedeId = urlParams.get('ver_plano_sede')
+  const verDistintivoSedeId = urlParams.get('ver_distintivo_sede')
+  const verDistintivoSrvId = urlParams.get('srv')
+
+  if (verPlanoSedeId || verDistintivoSedeId) {
+    const targetSedeId = verPlanoSedeId || verDistintivoSedeId
+    const targetSede = db.sedes.find(
+      (s) => s.id === targetSedeId || s.codigo_reps === targetSedeId,
+    )
+    const targetSrv = verDistintivoSedeId
+      ? targetSede?.servicios_habilitados?.find(
+          (sv) =>
+            sv.id === verDistintivoSrvId ||
+            sv.codigo_servicio === verDistintivoSrvId ||
+            sv.numero_distintivo === verDistintivoSrvId,
+        )
+      : undefined
+
+    const rawPdfUrl = verPlanoSedeId
+      ? targetSede?.url_planos_arquitectonicos
+      : targetSrv?.distintivo_pdf_data
+
+    const docTitle = verPlanoSedeId
+      ? `Planos Arquitectónicos — ${targetSede?.nombre || verPlanoSedeId}`
+      : `Distintivo de Habilitación ${targetSrv?.numero_distintivo || ''} — ${targetSrv?.codigo_servicio || ''} ${targetSrv?.nombre_servicio || ''}`
+
+    let resolvedBlobUrl = rawPdfUrl || ''
+    if (rawPdfUrl && rawPdfUrl.startsWith('data:')) {
+      try {
+        const [header, base64] = rawPdfUrl.split(',')
+        const mimeMatch = header.match(/data:(.*?);/)
+        const mime = mimeMatch ? mimeMatch[1] : 'application/pdf'
+        const binary = atob(base64)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i)
+        }
+        const blob = new Blob([bytes], { type: mime })
+        resolvedBlobUrl = URL.createObjectURL(blob)
+      } catch {
+        resolvedBlobUrl = rawPdfUrl
+      }
+    }
+
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#0f172a',
+          color: '#f8fafc',
+        }}
+      >
+        <header
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 20px',
+            background: '#1e293b',
+            borderBottom: '1px solid #334155',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <FileText size={20} style={{ color: '#38bdf8' }} />
+            <div>
+              <strong style={{ fontSize: 14, display: 'block' }}>{docTitle}</strong>
+              <small style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                HABILITACIÓN SUH · Visor Oficial de Soportes PDF
+              </small>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {resolvedBlobUrl && (
+              <a
+                href={resolvedBlobUrl}
+                download={
+                  verPlanoSedeId
+                    ? `Planos_${targetSede?.nombre || 'Sede'}.pdf`
+                    : targetSrv?.distintivo_pdf_nombre ||
+                      `Distintivo_${targetSrv?.numero_distintivo || 'REPS'}.pdf`
+                }
+                className="button button-primary"
+                style={{ textDecoration: 'none' }}
+              >
+                Descargar PDF
+              </a>
+            )}
+            <a
+              href={window.location.origin}
+              className="button button-secondary"
+              style={{ textDecoration: 'none' }}
+            >
+              Ir a la Plataforma SUH
+            </a>
+          </div>
+        </header>
+        {resolvedBlobUrl ? (
+          <iframe
+            src={resolvedBlobUrl}
+            title={docTitle}
+            style={{
+              flex: 1,
+              width: '100%',
+              border: 'none',
+              minHeight: 'calc(100vh - 64px)',
+              background: '#fff',
+            }}
+          />
+        ) : (
+          <div style={{ padding: 40, textAlign: 'center', color: '#cbd5e1' }}>
+            <p style={{ fontSize: 15, fontWeight: 600 }}>
+              Sincronizando o cargando el documento PDF desde la sede...
+            </p>
+            <p style={{ fontSize: 13, color: '#94a3b8' }}>
+              Si acabas de abrir este enlace, espera unos segundos mientras se sincroniza la base de datos o verifica que el PDF esté cargado en la Ficha Técnica de la sede.
+            </p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // Si no hay sesión activa -> Mostrar Pantalla de Login Institucional (Estilo SARLAFT)
   if (!currentUser) {
     return (

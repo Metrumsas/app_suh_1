@@ -96,7 +96,12 @@ export class SarlaftPdfTemplate {
     this.y += 8.5
   }
 
-  table(headers: string[], rows: string[][], proportions: number[]) {
+  table(
+    headers: string[],
+    rows: string[][],
+    proportions: number[],
+    cellLinks?: Record<string, string>,
+  ) {
     if (rows.length === 0) return
     const widths = proportions.map((value) => value * this.width)
     const lineHeight = 3.9
@@ -157,6 +162,13 @@ export class SarlaftPdfTemplate {
         }
       }
       const pdf = this.pdf
+      const pendingLinks: {
+        x: number
+        y: number
+        w: number
+        h: number
+        url: string
+      }[] = []
       pdf.saveGraphicsState()
       pdf.roundedRect(this.left, top, this.width, height, 2, 2, null)
       pdf.clip()
@@ -183,14 +195,28 @@ export class SarlaftPdfTemplate {
         let cx = this.left
         row.cells.forEach((cell, index) => {
           if (index > 0) pdf.line(cx, this.y, cx, this.y + row.height)
+          const cellLinkUrl = cellLinks?.[`${row.index}:${index}`]
           this.font(
             8.2,
-            index === 0,
-            index === 0 ? sarlaftPalette.navy : sarlaftPalette.ink,
+            index === 0 || Boolean(cellLinkUrl),
+            cellLinkUrl
+              ? sarlaftPalette.accentBlue
+              : index === 0
+                ? sarlaftPalette.navy
+                : sarlaftPalette.ink,
           )
           if (cell.length) {
             pdf.text(cell, cx + 2.5, this.y + 4.0, {
               lineHeightFactor: lineHeight / (8.2 * 0.352778),
+            })
+          }
+          if (cellLinkUrl) {
+            pendingLinks.push({
+              x: cx,
+              y: this.y,
+              w: widths[index],
+              h: row.height,
+              url: cellLinkUrl,
             })
           }
           cx += widths[index]
@@ -198,6 +224,9 @@ export class SarlaftPdfTemplate {
         this.y += row.height
       }
       pdf.restoreGraphicsState()
+      for (const lnk of pendingLinks) {
+        pdf.link(lnk.x, lnk.y, lnk.w, lnk.h, { url: lnk.url })
+      }
       pdf.setDrawColor(...sarlaftPalette.line)
       pdf.setLineWidth(0.2)
       pdf.roundedRect(this.left, top, this.width, height, 2, 2, 'S')
@@ -300,7 +329,7 @@ export function generateSedeFichaTecnicaPdf(
     true,
   )
 
-  // 01. Datos de Identificación, Condiciones Técnicas y Vigencia REPS (4 columnas compactas para optimizar espacio)
+  // 01. Datos de Identificación, Condiciones Técnicas y Vigencia REPS (4 columnas compactas sin textos largos que estiren las celdas)
   docTpl.section('Datos de identificación, infraestructura y vigencia REPS')
   docTpl.table(
     ['CAMPO', 'INFORMACIÓN REGISTRADA', 'CAMPO', 'INFORMACIÓN REGISTRADA'],
@@ -330,10 +359,10 @@ export function generateSedeFichaTecnicaPdf(
         `${sede.cuartos_ambientes || 7} cuarto(s) · ${sede.banos_unidades || 3} baño(s)`,
       ],
       [
-        'Tenencia y Accesibilidad PMR',
-        `${sede.tenencia_inmueble || 'Arrendado'} · PMR: ${(sede.accesibilidad_pmr ?? true) ? 'SÍ' : 'NO'}`,
-        'Distribución por Piso',
-        sede.descripcion_pisos || 'Distribución general de consultorios y áreas de apoyo.',
+        'Tenencia del Inmueble',
+        sede.tenencia_inmueble || 'Arrendado',
+        'Accesibilidad PMR',
+        (sede.accesibilidad_pmr ?? true) ? 'SÍ (Rampa / Ascensor / Baño PMR)' : 'NO',
       ],
       [
         'Planta Eléctrica / UPS',
@@ -355,6 +384,11 @@ export function generateSedeFichaTecnicaPdf(
       ],
     ],
     [0.21, 0.29, 0.21, 0.29],
+  )
+
+  docTpl.box(
+    'DESCRIPCIÓN DEL PISO Y DISTRIBUCIÓN ARQUITECTÓNICA DE LA CONSTRUCCIÓN',
+    sede.descripcion_pisos || 'Distribución general de consultorios y áreas de apoyo.',
   )
 
   docTpl.box(
@@ -528,6 +562,10 @@ export function generateSedeFichaTecnicaPdf(
   const cardY = docTpl.y
   const cardW = 88
   const cardH = 18
+  const appOrigin =
+    typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : 'https://suh.metrumsas.com'
 
   // Tarjeta 1: Planos Arquitectónicos (PDF)
   pdf.setFillColor(246, 247, 248)
@@ -540,24 +578,24 @@ export function generateSedeFichaTecnicaPdf(
 
   if (sede.url_planos_arquitectonicos) {
     const isHttpPlano = /^https?:\/\//i.test(sede.url_planos_arquitectonicos)
+    const targetPlanoUrl = isHttpPlano
+      ? sede.url_planos_arquitectonicos
+      : `${appOrigin}/?ver_plano_sede=${encodeURIComponent(sede.id)}`
     docTpl.font(8, true, [37, 99, 235])
-    const linkLabel = isHttpPlano
-      ? 'Clic aquí para abrir Planos Arquitectónicos (PDF)'
-      : 'Archivo PDF cargado en la Ficha Técnica de la Sede'
-    pdf.text(linkLabel, docTpl.left + 3.5, cardY + 11.2)
+    pdf.text(
+      'Clic aquí para abrir Planos Arquitectónicos (PDF)',
+      docTpl.left + 3.5,
+      cardY + 11.2,
+    )
     docTpl.font(6.8, false, [100, 108, 115])
     pdf.text(
-      isHttpPlano
-        ? sede.url_planos_arquitectonicos.slice(0, 52)
-        : 'Disponible para descarga directa en el módulo web SUH',
+      targetPlanoUrl.slice(0, 52),
       docTpl.left + 3.5,
       cardY + 15.5,
     )
-    if (isHttpPlano) {
-      pdf.link(docTpl.left, cardY, cardW, cardH, {
-        url: sede.url_planos_arquitectonicos,
-      })
-    }
+    pdf.link(docTpl.left, cardY, cardW, cardH, {
+      url: targetPlanoUrl,
+    })
   } else {
     docTpl.font(8, false, [100, 108, 115])
     pdf.text('Sin archivo PDF de planos registrado', docTpl.left + 3.5, cardY + 11.5)
@@ -606,7 +644,8 @@ export function generateSedeFichaTecnicaPdf(
       'No se han inscrito servicios de salud REPS en esta sede.',
     )
   } else {
-    const srvRows = serviciosOrdenados.map((srv) => {
+    const srvCellLinks: Record<string, string> = {}
+    const srvRows = serviciosOrdenados.map((srv, idx) => {
       const mods = summarizeModalidadesREPS(srv.modalidades).join(', ')
       const diasHorarios = (
         [
@@ -623,11 +662,19 @@ export function generateSedeFichaTecnicaPdf(
         .map(([d, h]) => `${d}: ${h}`)
         .join(' · ')
 
+      if (srv.distintivo_pdf_data) {
+        srvCellLinks[`${idx}:3`] = `${appOrigin}/?ver_distintivo_sede=${encodeURIComponent(sede.id)}&srv=${encodeURIComponent(srv.id)}`
+      }
+
+      const distintivoLabel = srv.numero_distintivo
+        ? `${srv.numero_distintivo}${srv.distintivo_pdf_data ? '\n(Clic para ver PDF)' : ''}`
+        : 'Sin distintivo'
+
       return [
         `${srv.codigo_servicio} — ${srv.nombre_servicio}\n(${srv.grupo})`,
         mods || 'Intramural',
-        `${srv.complejidad.toUpperCase()}${srv.especificidades ? `\nEsp: ${srv.especificidades}` : ''}`,
-        formatDateES(srv.fecha_apertura),
+        `${srv.complejidad.toUpperCase()}\n${formatDateES(srv.fecha_apertura)}${srv.especificidades ? `\nEsp: ${srv.especificidades}` : ''}`,
+        distintivoLabel,
         diasHorarios || '07:00 a 17:00',
       ]
     })
@@ -636,12 +683,13 @@ export function generateSedeFichaTecnicaPdf(
       [
         'CÓDIGO / SERVICIO Y GRUPO',
         'MODALIDADES HABILITADAS',
-        'COMPLEJIDAD',
-        'APERTURA',
+        'COMPLEJIDAD Y APERTURA',
+        'DISTINTIVO',
         'HORARIO DE ATENCIÓN',
       ],
       srvRows,
-      [0.27, 0.22, 0.14, 0.11, 0.26],
+      [0.24, 0.2, 0.16, 0.15, 0.25],
+      srvCellLinks,
     )
   }
 
