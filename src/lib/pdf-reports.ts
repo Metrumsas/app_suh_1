@@ -814,52 +814,37 @@ export function generateSedeFichaTecnicaPdf(
   finalPdf.save(`Ficha_Tecnica_Sede_${sede.nombre.replace(/\s+/g, '_')}.pdf`)
 }
 
-function drawHeader(doc: jsPDF, title: string, subtitle: string) {
-  doc.setFillColor(17, 29, 50)
-  doc.rect(0, 0, 210, 32, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(14)
-  doc.text('SISTEMA DE GESTIÓN DE CALIDAD Y HABILITACIÓN SUH - RES. 3100 DE 2019', 14, 13)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.text(title, 14, 21)
-  doc.setFontSize(8.5)
-  doc.setTextColor(190, 210, 245)
-  doc.text(subtitle, 14, 27)
-  doc.setTextColor(23, 32, 51)
-}
-
-function checkPageBreak(doc: jsPDF, y: number, needed: number = 28): number {
-  if (y + needed > 280) {
-    doc.addPage()
-    return 20
-  }
-  return y
-}
-
 // ============================================================================
 // 1. PDF DE ADMINISTRACIÓN POR SEDE (Incluye SIEMPRE los criterios NACIONALES)
+// Bajo los lineamientos institucionales SARLAFT (Encabezado gris pálido,
+// secciones numeradas 01..0N, pie de página con confidencialidad y páginas,
+// conservando el uso de colores semáforo para resaltar vencidos y cumplidos)
 // ============================================================================
 export function generateAdminSedePdf(
   sedeSeleccionada: Sede,
   sedeNacional: Sede | undefined,
   criterios: AdminCriterionRecord[],
 ) {
-  const doc = new jsPDF()
   const today = todayISO()
+  const docTpl = new SarlaftPdfTemplate(
+    `Informe de Cumplimiento Administrativo y Financiero — ${sedeSeleccionada.nombre}`,
+    'Cumplimiento Administrativo',
+    sedeSeleccionada.codigo_reps || sedeSeleccionada.id,
+  )
+  const pdf = docTpl.pdf
 
   // Filtrar criterios de la sede seleccionada + SIEMPRE los nacionales
-  const relevantes = criterios.filter(
-    (c) =>
-      c.sede_id === sedeSeleccionada.id ||
-      (sedeNacional && c.sede_id === sedeNacional.id),
+  const relevantes = criterios.filter((c) =>
+    sedeSeleccionada.es_nacional
+      ? c.sede_id === sedeSeleccionada.id
+      : c.sede_id === sedeSeleccionada.id ||
+        (sedeNacional && c.sede_id === sedeNacional.id),
   )
 
   const evaluados = relevantes.map((c) => ({
     criterio: c,
     eval: evaluateAdminCriterion(c, today),
-    esNacional: sedeNacional ? c.sede_id === sedeNacional.id : false,
+    esNacional: sedeNacional ? c.sede_id === sedeNacional.id : Boolean(sedeSeleccionada.es_nacional),
   }))
 
   const total = evaluados.length
@@ -869,137 +854,301 @@ export function generateAdminSedePdf(
   const prioritarios = evaluados.filter((e) => e.eval.semaforo.level === 'prioridad').length
   const pct = total > 0 ? Math.round((cumplen / total) * 1000) / 10 : 0
 
-  drawHeader(
-    doc,
-    `INFORME DE CUMPLIMIENTO ADMINISTRATIVO Y FINANCIERO — ${sedeSeleccionada.nombre.toUpperCase()}`,
-    `Código REPS: ${sedeSeleccionada.codigo_reps} | Incluye criterios de Sede + Criterios NACIONALES | Fecha: ${formatDateES(today)}`,
-  )
-
-  let y = 40
-  // Bloque de KPIs de la sede
-  doc.setFillColor(244, 247, 252)
-  doc.setDrawColor(218, 226, 238)
-  doc.roundedRect(14, y, 182, 24, 3, 3, 'FD')
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
-  doc.setTextColor(50, 105, 221)
-  doc.text('INDICADORES (KPIs) DE LA SEDE CONSOLIDADA CON CRITERIOS NACIONALES', 18, y + 7)
-
-  doc.setFontSize(9.5)
-  doc.setTextColor(23, 32, 51)
-  doc.text(`Cumplimiento Global: ${pct}% (${cumplen}/${total})`, 18, y + 15)
-  doc.setTextColor(180, 35, 24)
-  doc.text(`No Cumplen: ${noCumplen}`, 85, y + 15)
-  doc.text(`Semáforo Crítico (<=30d): ${criticos}`, 130, y + 15)
-  doc.setTextColor(140, 95, 10)
-  doc.text(`Prioridad (31-60d): ${prioritarios}`, 18, y + 21)
-  doc.setTextColor(23, 32, 51)
-  doc.text(`Responsable Sede: ${sedeSeleccionada.director_responsable}`, 85, y + 21)
-
-  y += 32
-
-  // Ordenar: Primero NACIONALES y luego Sede Seleccionada
-  const ordenados = [...evaluados].sort(
-    (a, b) => Number(b.esNacional) - Number(a.esNacional) || a.criterio.codigo.localeCompare(b.criterio.codigo),
-  )
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(10.5)
-  doc.text('DETALLE DE CRITERIOS (NACIONALES Y ESPECÍFICOS DE LA SEDE)', 14, y)
-  y += 6
-
-  for (const item of ordenados) {
-    y = checkPageBreak(doc, y, 30)
-    const { criterio, eval: ev, esNacional } = item
-
-    doc.setDrawColor(220, 226, 236)
-    doc.setFillColor(ev.cumple ? 250 : 255, ev.cumple ? 253 : 245, ev.cumple ? 251 : 245)
-    doc.roundedRect(14, y, 182, 25, 2, 2, 'FD')
-
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(23, 32, 51)
-    const tagSede = esNacional ? '[NACIONAL]' : `[${sedeSeleccionada.nombre}]`
-    doc.text(`${criterio.codigo} ${tagSede} - ${criterio.titulo}`.slice(0, 95), 17, y + 6)
-
-    doc.setFont('helvetica', 'bold')
-    if (ev.cumple) {
-      doc.setTextColor(21, 150, 106)
-    } else {
-      doc.setTextColor(217, 79, 86)
-    }
-    doc.text(`Estado: ${ev.estadoLabel.toUpperCase()}`, 160, y + 6)
-
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8)
-    doc.setTextColor(75, 85, 105)
-    doc.text(
-      `Categoría: ${criterio.categoria} | Responsable: ${criterio.responsable} | Vencimiento: ${formatDateES(ev.fechaEfectivaVencimiento)}`,
-      17,
-      y + 12,
-    )
-    doc.text(
-      `Semáforo: ${ev.semaforo.label} | Soporte: ${ev.ultimoSoporte ? `${ev.ultimoSoporte.titulo} (${ev.ultimoSoporte.archivo_nombre})` : 'SIN SOPORTE VIGENTE'}`,
-      17,
-      y + 17.5,
-    )
-    doc.text(`Observación: ${(criterio.observaciones || ev.motivo).slice(0, 105)}`, 17, y + 22.5)
-
-    y += 28
+  const getSemaphoreRgb = (p: number, tot: number): Color => {
+    if (tot === 0) return [148, 163, 184]
+    if (p >= 85) return [21, 150, 106] // Verde institucional
+    if (p >= 60) return [214, 144, 22] // Ámbar institucional
+    return [217, 79, 86] // Rojo institucional
   }
 
-  doc.save(`Cumplimiento_Administrativo_${sedeSeleccionada.nombre.replace(/\s+/g, '_')}.pdf`)
+  // Caja Resumen Ejecutiva Superior (Estilo Institucional SARLAFT)
+  docTpl.box(
+    'RESUMEN EJECUTIVO DE CUMPLIMIENTO ADMINISTRATIVO Y FINANCIERO',
+    `${sedeSeleccionada.nombre.toUpperCase()} (Código REPS: ${sedeSeleccionada.codigo_reps || 'N/A'}) · Incluye Criterios de Sede + Criterios NACIONALES · Responsable: ${sedeSeleccionada.director_responsable} · Fecha de corte: ${formatDateES(today)}`,
+    true,
+  )
+
+  // 01. Indicadores (KPIs) Consolidados y Cumplimiento por Clasificación con Color Semáforo
+  docTpl.section('Indicadores (KPIs) consolidados y cumplimiento por clasificación')
+  docTpl.ensureSpace(78)
+
+  // Tarjeta principal de Cumplimiento Global con barra de color semáforo
+  const genY = docTpl.y
+  const genH = 23
+  const globalColor = getSemaphoreRgb(pct, total)
+
+  pdf.setFillColor(246, 247, 248)
+  pdf.setDrawColor(216, 221, 225)
+  pdf.roundedRect(docTpl.left, genY, docTpl.width, genH, 2, 2, 'FD')
+  pdf.setFillColor(...globalColor)
+  pdf.roundedRect(docTpl.left, genY + 2.5, 1.2, genH - 5, 0.5, 0.5, 'F')
+
+  docTpl.font(8.5, true, [48, 56, 65])
+  pdf.text(
+    'INDICADORES (KPIs) DE LA SEDE CONSOLIDADA CON CRITERIOS NACIONALES',
+    docTpl.left + 4,
+    genY + 5.8,
+  )
+
+  docTpl.font(11.5, true, globalColor)
+  pdf.text(
+    `${pct}% (${cumplen}/${total} cumplen)`,
+    docTpl.left + docTpl.width - 4,
+    genY + 6.2,
+    { align: 'right' },
+  )
+
+  const trackX = docTpl.left + 4
+  const trackY = genY + 9.2
+  const trackW = docTpl.width - 8
+  const trackH = 4.2
+  pdf.setFillColor(226, 232, 240)
+  pdf.roundedRect(trackX, trackY, trackW, trackH, 1.5, 1.5, 'F')
+  if (total > 0 && pct > 0) {
+    pdf.setFillColor(...globalColor)
+    pdf.roundedRect(
+      trackX,
+      trackY,
+      Math.max(3, (trackW * pct) / 100),
+      trackH,
+      1.5,
+      1.5,
+      'F',
+    )
+  }
+
+  docTpl.font(7.5, true, [21, 150, 106])
+  pdf.text(`Cumplen Vigentes: ${cumplen}`, trackX, genY + 18.8)
+  docTpl.font(7.5, true, [217, 79, 86])
+  pdf.text(`No Cumplen / Vencidos: ${noCumplen}`, trackX + 46, genY + 18.8)
+  docTpl.font(7.5, true, [180, 35, 24])
+  pdf.text(`Semáforo Crítico (<=30d): ${criticos}`, trackX + 102, genY + 18.8)
+  docTpl.font(7.5, true, [214, 144, 22])
+  pdf.text(
+    `Prioridad (31-60d): ${prioritarios}`,
+    docTpl.left + docTpl.width - 4,
+    genY + 18.8,
+    { align: 'right' },
+  )
+
+  docTpl.y = genY + genH + 4
+
+  // Grilla de 2 columnas con las 7 Clasificaciones y sus barras de color
+  const clasifCardW = 88
+  const clasifCardH = 11.5
+  const clasifGapX = 4
+  const clasifGapY = 2.8
+
+  for (let i = 0; i < CLASIFICACIONES_CRONOGRAMA_ADMIN.length; i += 2) {
+    docTpl.ensureSpace(clasifCardH + 3)
+    const rowY = docTpl.y
+
+    for (let col = 0; col < 2; col++) {
+      const idx = i + col
+      if (idx >= CLASIFICACIONES_CRONOGRAMA_ADMIN.length) break
+      const clasif = CLASIFICACIONES_CRONOGRAMA_ADMIN[idx]
+      const itemsClasif = evaluados.filter(({ criterio: c }) => {
+        if (c.categoria === clasif) return true
+        if (
+          clasif === 'Administrativo' &&
+          c.categoria === 'Capacidad Técnico-Administrativa'
+        )
+          return true
+        if (
+          clasif === 'Financiero' &&
+          c.categoria === 'Suficiencia Patrimonial y Financiera'
+        )
+          return true
+        if (
+          clasif === 'Calidad y SST' &&
+          c.categoria === 'Sistema Obligatorio SOGCS'
+        )
+          return true
+        return false
+      })
+      const totC = itemsClasif.length
+      const okC = itemsClasif.filter((x) => x.eval.cumple).length
+      const pctC = totC > 0 ? Math.round((okC / totC) * 100) : 0
+      const barRgb = getSemaphoreRgb(pctC, totC)
+
+      const cx = docTpl.left + col * (clasifCardW + clasifGapX)
+      pdf.setFillColor(255, 255, 255)
+      pdf.setDrawColor(216, 221, 225)
+      pdf.roundedRect(cx, rowY, clasifCardW, clasifCardH, 1.8, 1.8, 'FD')
+
+      pdf.setFillColor(...barRgb)
+      pdf.roundedRect(cx, rowY + 1.8, 1, clasifCardH - 3.6, 0.4, 0.4, 'F')
+
+      docTpl.font(7.8, true, [48, 56, 65])
+      pdf.text(clasif, cx + 3.2, rowY + 4.5)
+
+      docTpl.font(7.5, true, barRgb)
+      pdf.text(
+        totC > 0 ? `${pctC}% (${okC}/${totC})` : 'Sin ítems (0/0)',
+        cx + clasifCardW - 3,
+        rowY + 4.5,
+        { align: 'right' },
+      )
+
+      const bX = cx + 3.2
+      const bY = rowY + 6.8
+      const bW = clasifCardW - 6.2
+      const bH = 2.6
+      pdf.setFillColor(226, 232, 240)
+      pdf.roundedRect(bX, bY, bW, bH, 1, 1, 'F')
+      if (totC > 0 && pctC > 0) {
+        pdf.setFillColor(...barRgb)
+        pdf.roundedRect(bX, bY, Math.max(2, (bW * pctC) / 100), bH, 1, 1, 'F')
+      }
+    }
+
+    docTpl.y = rowY + clasifCardH + clasifGapY
+  }
+
+  docTpl.y += 2
+
+  // 02. Detalle de Criterios (Nacionales y Específicos de la Sede) con Tarjetas Coloreadas por Cumplimiento
+  docTpl.section('Detalle de criterios (Nacionales y específicos de la Sede)')
+
+  const ordenados = [...evaluados].sort(
+    (a, b) =>
+      Number(b.esNacional) - Number(a.esNacional) ||
+      a.criterio.codigo.localeCompare(b.criterio.codigo, undefined, {
+        numeric: true,
+      }),
+  )
+
+  for (const item of ordenados) {
+    const { criterio, eval: ev, esNacional } = item
+    const cardH = 24.5
+    docTpl.ensureSpace(cardH + 3.5)
+    const y = docTpl.y
+
+    const borderColor: Color = ev.cumple ? [187, 247, 208] : [254, 202, 202]
+    const fillColor: Color = ev.cumple ? [246, 253, 249] : [255, 246, 246]
+    const accentColor: Color = ev.cumple ? [21, 150, 106] : [217, 79, 86]
+
+    pdf.setDrawColor(...borderColor)
+    pdf.setFillColor(...fillColor)
+    pdf.roundedRect(docTpl.left, y, docTpl.width, cardH, 2, 2, 'FD')
+
+    // Barra lateral institucional de estado (Verde si cumple, Rojo si está vencido / no cumple)
+    pdf.setFillColor(...accentColor)
+    pdf.roundedRect(docTpl.left, y + 2.2, 1.1, cardH - 4.4, 0.4, 0.4, 'F')
+
+    const tagSede = esNacional ? '[NACIONAL]' : `[${sedeSeleccionada.nombre}]`
+    docTpl.font(8.6, true, [48, 56, 65])
+    pdf.text(
+      `${criterio.codigo} ${tagSede} — ${criterio.titulo}`.slice(0, 82),
+      docTpl.left + 3.8,
+      y + 5.8,
+    )
+
+    // Píldora derecha de estado (CUMPLE / NO CUMPLE - VENCIDO)
+    docTpl.font(8, true, accentColor)
+    pdf.text(
+      `ESTADO: ${ev.estadoLabel.toUpperCase()}`,
+      docTpl.left + docTpl.width - 3.8,
+      y + 5.8,
+      { align: 'right' },
+    )
+
+    docTpl.font(7.6, false, [75, 85, 99])
+    pdf.text(
+      `Clasificación: ${criterio.categoria}  ·  Frecuencia: ${criterio.periodicidad || 'Anual'}  ·  Responsable: ${criterio.responsable || 'Por asignar'}  ·  Vencimiento: ${formatDateES(ev.fechaEfectivaVencimiento)}`,
+      docTpl.left + 3.8,
+      y + 11.4,
+    )
+
+    const semColor: Color =
+      ev.semaforo.level === 'critico'
+        ? [217, 79, 86]
+        : ev.semaforo.level === 'prioridad'
+          ? [214, 144, 22]
+          : [21, 150, 106]
+    docTpl.font(7.6, true, semColor)
+    pdf.text(`Semáforo: ${ev.semaforo.label}`, docTpl.left + 3.8, y + 16.6)
+
+    docTpl.font(7.6, false, [75, 85, 99])
+    const soporteTxt = ev.ultimoSoporte
+      ? `Soporte vigente: ${ev.ultimoSoporte.titulo} (${ev.ultimoSoporte.archivo_nombre})`
+      : 'Soporte vigente: SIN SOPORTE CARGADO'
+    pdf.text(soporteTxt.slice(0, 82), docTpl.left + 64, y + 16.6)
+
+    docTpl.font(7.4, false, [100, 108, 115])
+    const obsTxt = `Observación / Estado: ${(criterio.observaciones || ev.motivo || '').replace(/\s+/g, ' ')}`
+    pdf.text(obsTxt.slice(0, 112), docTpl.left + 3.8, y + 21.6)
+
+    docTpl.y = y + cardH + 2.8
+  }
+
+  const finalPdf = docTpl.finish()
+  finalPdf.save(
+    `Cumplimiento_Administrativo_${sedeSeleccionada.nombre.replace(/\s+/g, '_')}.pdf`,
+  )
 }
 
 // ============================================================================
 // 2. PDF DE EVALUACIONES RESOLUCIÓN 3100 (Individual o General Consolidado)
-// Priorizando siempre la identificación clara de los NO CUMPLIMIENTOS
+// Bajo los lineamientos institucionales SARLAFT y conservando el uso de colores
+// para resaltar los NO CUMPLIMIENTOS y cumplimientos vigentes
 // ============================================================================
 export function generateCumplimiento3100Pdf(
   evaluaciones: Evaluacion3100Sede[],
   sedes: Sede[],
-  tituloReporte: string = 'REPORTE GENERAL DE AUTOEVALUACIÓN Y CUMPLIMIENTO RESOLUCIÓN 3100',
+  tituloReporte: string = 'Reporte General de Autoevaluación y Cumplimiento Resolución 3100',
 ) {
-  const doc = new jsPDF()
   const today = todayISO()
-
-  drawHeader(
-    doc,
+  const docTpl = new SarlaftPdfTemplate(
     tituloReporte,
-    `Priorización de Hallazgos y No Cumplimientos por Sede y Estándar | Generado: ${formatDateES(today)}`,
+    'Autoevaluación Res. 3100',
+    today,
+  )
+  const pdf = docTpl.pdf
+
+  docTpl.box(
+    'RESUMEN EJECUTIVO DE AUTOEVALUACIÓN RESOLUCIÓN 3100 DE 2019',
+    `Priorización de Hallazgos y No Cumplimientos por Sede y Estándar · Sedes evaluadas: ${evaluaciones.length} · Generado: ${formatDateES(today)}`,
+    true,
   )
 
-  let y = 38
-
   for (const ev of evaluaciones) {
-    y = checkPageBreak(doc, y, 55)
     const sede = sedes.find((s) => s.id === ev.sede_id)
     const sum = summarizeEvaluacion3100(ev)
 
-    doc.setFillColor(235, 242, 255)
-    doc.setDrawColor(180, 200, 235)
-    doc.roundedRect(14, y, 182, 28, 3, 3, 'FD')
+    docTpl.section(
+      `${sede?.nombre ?? ev.sede_id} — Cumplimiento General: ${sum.porcentajeGeneral}%`,
+    )
+    docTpl.ensureSpace(32)
+    const y = docTpl.y
 
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10.5)
-    doc.setTextColor(23, 32, 51)
-    doc.text(
-      `${sede?.nombre ?? ev.sede_id} — Cumplimiento General: ${sum.porcentajeGeneral}% (${ev.estado === 'cerrada_vigente' ? 'EVALUACIÓN VIGENTE' : 'BORRADOR'})`,
-      18,
-      y + 7,
+    const barRgb: Color =
+      sum.porcentajeGeneral >= 85
+        ? [21, 150, 106]
+        : sum.porcentajeGeneral >= 60
+          ? [214, 144, 22]
+          : [217, 79, 86]
+
+    pdf.setFillColor(246, 247, 248)
+    pdf.setDrawColor(216, 221, 225)
+    pdf.roundedRect(docTpl.left, y, docTpl.width, 26, 2, 2, 'FD')
+    pdf.setFillColor(...barRgb)
+    pdf.roundedRect(docTpl.left, y + 2.5, 1.2, 21, 0.4, 0.4, 'F')
+
+    docTpl.font(8.5, true, [48, 56, 65])
+    pdf.text(
+      `Código: ${ev.codigo} · Fecha: ${formatDateES(ev.fecha_evaluacion)} · Evaluador: ${ev.evaluador} · Servicios: ${ev.servicios_evaluados.length}`,
+      docTpl.left + 4,
+      y + 6,
+    )
+    docTpl.font(8, true, barRgb)
+    pdf.text(
+      ev.estado === 'cerrada_vigente' ? 'EVALUACIÓN VIGENTE' : 'BORRADOR',
+      docTpl.left + docTpl.width - 4,
+      y + 6,
+      { align: 'right' },
     )
 
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8.5)
-    doc.setTextColor(65, 78, 98)
-    doc.text(
-      `Código: ${ev.codigo} | Fecha: ${formatDateES(ev.fecha_evaluacion)} | Evaluador: ${ev.evaluador} | Servicios Evaluados: ${ev.servicios_evaluados.length}`,
-      18,
-      y + 13,
-    )
-
-    // Desglose de los 7 estándares
     const line1 = ESTANDARES_3100.slice(0, 4)
       .map((e) => `${e.corto}: ${sum.porEstandar[e.key].porcentaje}%`)
       .join('  |  ')
@@ -1007,68 +1156,82 @@ export function generateCumplimiento3100Pdf(
       .map((e) => `${e.corto}: ${sum.porEstandar[e.key].porcentaje}%`)
       .join('  |  ')
 
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8)
-    doc.setTextColor(35, 65, 130)
-    doc.text(line1, 18, y + 19.5)
-    doc.text(line2, 18, y + 24.5)
+    docTpl.font(7.8, true, [88, 105, 109])
+    pdf.text(line1, docTpl.left + 4, y + 13)
+    pdf.text(line2, docTpl.left + 4, y + 19.5)
 
-    y += 33
+    docTpl.y = y + 30
 
-    // 1. PRIORIDAD ABSOLUTA: NO CUMPLIMIENTOS Y CUMPLIMIENTOS PARCIALES
-    const incumplimientos = ev.respuestas.filter(
-      (r) => r.calificacion === 'no_cumple' || r.calificacion === 'parcial',
-    ).sort((a, b) => (a.calificacion === 'no_cumple' ? -1 : 1) - (b.calificacion === 'no_cumple' ? -1 : 1))
-
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9.5)
-    doc.setTextColor(180, 35, 24)
-    doc.text(
-      `PRIORIDAD: NO CUMPLIMIENTOS Y PARCIALES IDENTIFICADOS (${incumplimientos.length})`,
-      14,
-      y,
-    )
-    y += 5
+    const incumplimientos = ev.respuestas
+      .filter((r) => r.calificacion === 'no_cumple' || r.calificacion === 'parcial')
+      .sort(
+        (a, b) =>
+          (a.calificacion === 'no_cumple' ? -1 : 1) -
+          (b.calificacion === 'no_cumple' ? -1 : 1),
+      )
 
     if (incumplimientos.length === 0) {
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(8.5)
-      doc.setTextColor(21, 150, 106)
-      doc.text('No se registran incumplimientos en esta evaluación.', 16, y + 4)
-      y += 10
+      docTpl.box(
+        'SIN INCUMPLIMIENTOS IDENTIFICADOS',
+        'No se registran incumplimientos ni cumplimientos parciales en esta evaluación.',
+      )
     } else {
       for (const inc of incumplimientos) {
-        y = checkPageBreak(doc, y, 26)
         const esNoCumple = inc.calificacion === 'no_cumple'
-        doc.setFillColor(esNoCumple ? 255 : 255, esNoCumple ? 240 : 249, esNoCumple ? 240 : 235)
-        doc.setDrawColor(esNoCumple ? 235 : 235, esNoCumple ? 175 : 205, esNoCumple ? 175 : 150)
-        doc.roundedRect(14, y, 182, 22, 2, 2, 'FD')
+        const cardH = 22
+        docTpl.ensureSpace(cardH + 3)
+        const cy = docTpl.y
 
-        doc.setFont('helvetica', 'bold')
-        doc.setFontSize(8.5)
-        doc.setTextColor(esNoCumple ? 175 : 145, esNoCumple ? 28 : 85, esNoCumple ? 28 : 10)
-        doc.text(
+        pdf.setFillColor(
+          esNoCumple ? 255 : 255,
+          esNoCumple ? 245 : 250,
+          esNoCumple ? 245 : 238,
+        )
+        pdf.setDrawColor(
+          esNoCumple ? 254 : 253,
+          esNoCumple ? 202 : 224,
+          esNoCumple ? 202 : 171,
+        )
+        pdf.roundedRect(docTpl.left, cy, docTpl.width, cardH, 2, 2, 'FD')
+        pdf.setFillColor(
+          ...(esNoCumple
+            ? ([217, 79, 86] as Color)
+            : ([214, 144, 22] as Color)),
+        )
+        pdf.roundedRect(docTpl.left, cy + 2, 1.1, cardH - 4, 0.4, 0.4, 'F')
+
+        docTpl.font(
+          8.2,
+          true,
+          esNoCumple ? [180, 35, 24] : [145, 85, 10],
+        )
+        pdf.text(
           `[${esNoCumple ? 'NO CUMPLE' : 'CUMPLE PARCIALMENTE'}] ${inc.codigo} · ${inc.servicio_asociado} (${inc.modalidad_asociada})`,
-          17,
-          y + 5.5,
+          docTpl.left + 3.8,
+          cy + 5.5,
         )
 
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(7.8)
-        doc.setTextColor(40, 50, 68)
-        doc.text(`Criterio: ${inc.criterio_texto.slice(0, 105)}`, 17, y + 10.5)
-        doc.text(`Hallazgo: ${(inc.descripcion_cumplimiento || 'Sin descripción').slice(0, 105)}`, 17, y + 15)
-        doc.text(
-          `Acción de Mejora (Plan de Trabajo): ${inc.accion_mejora_titulo || 'Pendiente'} | Resp: ${inc.accion_mejora_responsable || 'N/A'} | Plazo: ${formatDateES(inc.accion_mejora_fecha)}`,
-          17,
-          y + 19.5,
+        docTpl.font(7.6, false, [48, 56, 65])
+        pdf.text(
+          `Criterio: ${inc.criterio_texto.slice(0, 105)}`,
+          docTpl.left + 3.8,
+          cy + 10.5,
         )
-        y += 25
+        pdf.text(
+          `Hallazgo: ${(inc.descripcion_cumplimiento || 'Sin descripción').slice(0, 105)}`,
+          docTpl.left + 3.8,
+          cy + 15,
+        )
+        pdf.text(
+          `Acción de Mejora: ${inc.accion_mejora_titulo || 'Pendiente'} | Resp: ${inc.accion_mejora_responsable || 'N/A'} | Plazo: ${formatDateES(inc.accion_mejora_fecha)}`,
+          docTpl.left + 3.8,
+          cy + 19.5,
+        )
+        docTpl.y = cy + cardH + 2.8
       }
     }
-
-    y += 4
   }
 
-  doc.save(`Reporte_Cumplimiento_Res3100_${today}.pdf`)
+  const finalPdf = docTpl.finish()
+  finalPdf.save(`Reporte_Cumplimiento_Res3100_${today}.pdf`)
 }
