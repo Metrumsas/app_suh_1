@@ -1,6 +1,6 @@
 // ============================================================================
-// CAT?LOGO OFICIAL COMPLETO DE LOS 157 SERVICIOS DE SALUD ? RESOLUCI?N 3100 DE 2019
-// Extra?do ?ntegramente de tabla_parametros_servicios_310011.xlsx
+// CATÁLOGO OFICIAL COMPLETO DE LOS 157 SERVICIOS DE SALUD — RESOLUCIÓN 3100 DE 2019
+// Extraído íntegramente de tabla_parametros_servicios_310011.xlsx
 // Incluye: Grupos, Modalidades permitidas, Reglas de Complejidad, Especificidades y Capacidad Asociada
 // ============================================================================
 
@@ -210,7 +210,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Atenci?n al Paciente Quemado"
+      "Atención al Paciente Quemado"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -256,7 +256,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Atenci?n al Paciente Quemado"
+      "Atención al Paciente Quemado"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -336,7 +336,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Trasplante de C?lulas Progenitoras Hematopoy?ticas"
+      "Trasplante de Células Progenitoras Hematopoyéticas"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -372,7 +372,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Trasplante de C?lulas Progenitoras Hematopoy?ticas"
+      "Trasplante de Células Progenitoras Hematopoyéticas"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -447,7 +447,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     "especificidades_permitidas": [
       "Salud Mental",
       "SPA (Sustancias Psicoactivas)",
-      "Otras Patolog?as",
+      "Otras Patologías",
       "Trastornos por Sustancias Psicoactivas"
     ],
     "interdependencia": true,
@@ -655,10 +655,10 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico",
+      "Oncológico",
       "Trasplante Osteomuscular",
       "Trasplante de Piel",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -694,9 +694,9 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     ],
     "especificidades_permitidas": [
       "Trasplante Cardiovascular",
-      "Procedimientos Quir?rgicos Ambulatorios",
-      "Trasplante ?rgano Coraz?n",
-      "Trasplante ?rgano Pulm?n"
+      "Procedimientos Quirúrgicos Ambulatorios",
+      "Trasplante Órgano Corazón",
+      "Trasplante Órgano Pulmón"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -731,7 +731,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -766,8 +766,8 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Oncológico",
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -804,7 +804,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     "especificidades_permitidas": [
       "Trasplante Osteomuscular",
       "Trasplante de Piel",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -841,7 +841,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     "especificidades_permitidas": [
       "Trasplante Osteomuscular",
       "Trasplante de Piel",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -878,7 +878,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     "especificidades_permitidas": [
       "Trasplante Osteomuscular",
       "Trasplante de Tejido Ocular",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -915,7 +915,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     "especificidades_permitidas": [
       "Trasplante Osteomuscular",
       "Trasplante de Piel",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -952,7 +952,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     "especificidades_permitidas": [
       "Trasplante Osteomuscular",
       "Trasplante de Piel",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -989,7 +989,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     "especificidades_permitidas": [
       "Trasplante Osteomuscular",
       "Trasplante de Piel",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1024,7 +1024,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1061,7 +1061,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     "especificidades_permitidas": [
       "Trasplante Osteomuscular",
       "Trasplante de Piel",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1096,7 +1096,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1131,9 +1131,9 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Procedimientos Quir?rgicos Ambulatorios",
-      "Trasplante ?rgano Ri??n",
-      "Trasplante ?rgano P?ncreas",
+      "Procedimientos Quirúrgicos Ambulatorios",
+      "Trasplante Órgano Riñón",
+      "Trasplante Órgano Páncreas",
       "Trasplante Renal"
     ],
     "interdependencia": true,
@@ -1169,9 +1169,9 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico",
-      "Procedimientos Quir?rgicos Ambulatorios",
-      "Trasplante ?rgano Intestino",
+      "Oncológico",
+      "Procedimientos Quirúrgicos Ambulatorios",
+      "Trasplante Órgano Intestino",
       "Trasplante Multivisceral",
       "Trasplante Renal"
     ],
@@ -1208,7 +1208,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1245,7 +1245,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     "especificidades_permitidas": [
       "Trasplante Osteomuscular",
       "Trasplante de Piel",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1282,7 +1282,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     "especificidades_permitidas": [
       "Trasplante Osteomuscular",
       "Trasplante de Piel",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1317,8 +1317,8 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Oncológico",
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1353,7 +1353,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1389,9 +1389,9 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     ],
     "especificidades_permitidas": [
       "Trasplante Osteomuscular",
-      "Procedimientos Quir?rgicos Ambulatorios",
-      "Trasplante ?rgano Coraz?n",
-      "Trasplante ?rgano Pulm?n"
+      "Procedimientos Quirúrgicos Ambulatorios",
+      "Trasplante Órgano Corazón",
+      "Trasplante Órgano Pulmón"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1426,7 +1426,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1463,7 +1463,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
     "especificidades_permitidas": [
       "Trasplante Osteomuscular",
       "Trasplante de Piel",
-      "Procedimientos Quir?rgicos Ambulatorios"
+      "Procedimientos Quirúrgicos Ambulatorios"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -1754,7 +1754,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Media"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico"
+      "Oncológico"
     ],
     "interdependencia": false,
     "capacidad_instalada_asociada": [
@@ -3166,7 +3166,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Media"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico"
+      "Oncológico"
     ],
     "interdependencia": false,
     "capacidad_instalada_asociada": [
@@ -3320,7 +3320,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Media"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico"
+      "Oncológico"
     ],
     "interdependencia": false,
     "capacidad_instalada_asociada": [
@@ -3854,7 +3854,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Media"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico"
+      "Oncológico"
     ],
     "interdependencia": false,
     "capacidad_instalada_asociada": [
@@ -4388,7 +4388,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Media"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico"
+      "Oncológico"
     ],
     "interdependencia": false,
     "capacidad_instalada_asociada": [
@@ -4890,7 +4890,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Media"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico"
+      "Oncológico"
     ],
     "interdependencia": false,
     "capacidad_instalada_asociada": [
@@ -5063,7 +5063,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico"
+      "Oncológico"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": [
@@ -5149,7 +5149,7 @@ export const TABLA_PARAMETROS_SERVICIOS_3100: ParametroServicio3100[] = [
       "Alta"
     ],
     "especificidades_permitidas": [
-      "Oncol?gico"
+      "Oncológico"
     ],
     "interdependencia": true,
     "capacidad_instalada_asociada": []

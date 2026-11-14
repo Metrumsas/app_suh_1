@@ -620,19 +620,25 @@ export default function SedeServiciosREPSManager({
                           key={spec}
                           className="case-check"
                           style={{
-                            fontSize: 11.5,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            fontSize: 12,
                             background: checked ? '#eff6ff' : '#f8fafc',
-                            padding: '5px 8px',
-                            borderRadius: 6,
+                            padding: '8px 10px',
+                            borderRadius: 7,
                             border: checked ? '1px solid #93c5fd' : '1px solid #e2e8f0',
+                            cursor: 'pointer',
+                            minWidth: 0,
                           }}
                         >
                           <input
                             type="checkbox"
                             checked={checked}
                             onChange={() => toggleEspecificidad(spec)}
+                            style={{ width: 16, height: 16, flexShrink: 0, margin: 0 }}
                           />
-                          <span>{spec}</span>
+                          <span style={{ flex: 1, lineHeight: 1.35, color: '#1e293b' }}>{spec}</span>
                         </label>
                       )
                     })}
