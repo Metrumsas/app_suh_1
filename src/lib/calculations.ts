@@ -302,8 +302,8 @@ export function evaluateAdminCriterion(record: AdminCriterionRecord, today: stri
   estadoSeguimiento:
     | 'Cumple · En término (>60d)'
     | 'Cumple · Prioridad renovación (31-60d)'
-    | 'Cumple · Crítico próximo a vencer (≤30d)'
-    | 'No cumple · Vencido (Alerta Diaria Activa)'
+    | 'Cumple · Crítico próximo a vencer (<=30d)'
+    | 'No cumple · Vencido (Sin soporte vigente)'
     | 'No cumple · Pendiente de ejecución'
   motivo: string
   ultimoSoporte: AdminCriterionRecord['soportes'][number] | null
@@ -328,7 +328,7 @@ export function evaluateAdminCriterion(record: AdminCriterionRecord, today: stri
       cumple: false,
       estadoLabel: 'No cumple',
       estadoSeguimiento: isPastDue
-        ? 'No cumple · Vencido (Alerta Diaria Activa)'
+        ? 'No cumple · Vencido (Sin soporte vigente)'
         : 'No cumple · Pendiente de ejecución',
       motivo: isPastDue
         ? `Sin ejecutar y plazo vencido hace ${Math.abs(days)} día(s). Estado fijo en NO CUMPLE hasta adjuntar soporte.`
@@ -357,7 +357,7 @@ export function evaluateAdminCriterion(record: AdminCriterionRecord, today: stri
     return {
       cumple: false,
       estadoLabel: 'No cumple',
-      estadoSeguimiento: 'No cumple · Vencido (Alerta Diaria Activa)',
+      estadoSeguimiento: 'No cumple · Vencido (Sin soporte vigente)',
       motivo: `Soporte v${ultimo.version} vencido hace ${Math.abs(days)} días (${formatDateES(ultimo.fecha_vencimiento)}). El estado NO cambia hasta ejecutar renovación.`,
       ultimoSoporte: ultimo,
       fechaEfectivaVencimiento: ultimo.fecha_vencimiento,
@@ -373,7 +373,7 @@ export function evaluateAdminCriterion(record: AdminCriterionRecord, today: stri
 
   const estadoSeg =
     days <= 30
-      ? ('Cumple · Crítico próximo a vencer (≤30d)' as const)
+      ? ('Cumple · Crítico próximo a vencer (<=30d)' as const)
       : days <= 60
         ? ('Cumple · Prioridad renovación (31-60d)' as const)
         : ('Cumple · En término (>60d)' as const)

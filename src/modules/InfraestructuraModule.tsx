@@ -93,16 +93,27 @@ function generateInfraSedePlanPdf(
   } else {
     const rows = activities.map((act) => {
       const dates = getActivityDates(act, today)
+      const sem = evaluateSemaphore3060(
+        act.plazo_ejecucion,
+        today,
+        act.estado === 'Ejecutada',
+      )
       const datesStr = dates
         .map(
           (d) =>
-            `#${d.numero}: ${formatDateES(d.fecha_programada)} (${d.estado === 'ejecutada' ? 'Ejecutada' : 'Prog.'})`,
+            `#${d.numero}: ${formatDateES(d.fecha_programada)} (${d.estado === 'ejecutada' ? 'Ejecutada' : diffDays(d.fecha_programada, today) < 0 ? 'VENCIDA' : 'Prog.'})`,
         )
         .join(' · ')
+      const estadoPdf =
+        act.estado === 'Ejecutada'
+          ? `CUMPLE · EJECUTADA\n(${formatDateES(act.plazo_ejecucion)})`
+          : sem.days < 0
+            ? `NO CUMPLE · VENCIDA\nHace ${Math.abs(sem.days)} d (${formatDateES(act.plazo_ejecucion)})`
+            : `${act.estado.toUpperCase()}\nVence en ${sem.days} d (${formatDateES(act.plazo_ejecucion)})`
       return [
         `${act.titulo}\n(${act.clasificacion})`,
         `${act.periodicidad || 'Semestral'}\n${datesStr}`,
-        `${act.estado.toUpperCase()}\nPróx: ${formatDateES(act.plazo_ejecucion)}`,
+        estadoPdf,
         `${act.responsable}\n${act.responsable_correo || ''}`,
         `Prog: ${formatCOP(act.presupuesto || 0)}\nEjec: ${formatCOP(act.presupuesto_ejecutado || 0)}`,
       ]
@@ -1550,51 +1561,98 @@ export default function InfraestructuraModule({
                                         </span>
                                       </div>
                                       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 4 }}>
-                                        {dates.slice(0, 4).map((d) => (
-                                          <span
-                                            key={d.id}
-                                            style={{
-                                              display: 'inline-block',
-                                              padding: '2px 6px',
-                                              borderRadius: 4,
-                                              fontSize: 10,
-                                              fontWeight: 600,
-                                              background:
-                                                d.estado === 'ejecutada' ? '#dcfce7' : '#f1f5f9',
-                                              color:
-                                                d.estado === 'ejecutada' ? '#166534' : '#334155',
-                                              border:
-                                                d.estado === 'ejecutada'
-                                                  ? '1px solid #86efac'
-                                                  : '1px solid #cbd5e1',
-                                              whiteSpace: 'nowrap',
-                                            }}
-                                          >
-                                            #{d.numero}: {formatDateES(d.fecha_programada)}
-                                          </span>
-                                        ))}
+                                        {dates.slice(0, 4).map((d) => {
+                                          const isDateOverdue =
+                                            d.estado !== 'ejecutada' &&
+                                            diffDays(d.fecha_programada, today) < 0
+                                          return (
+                                            <span
+                                              key={d.id}
+                                              style={{
+                                                display: 'inline-block',
+                                                padding: '2px 6px',
+                                                borderRadius: 4,
+                                                fontSize: 10,
+                                                fontWeight: 600,
+                                                background:
+                                                  d.estado === 'ejecutada'
+                                                    ? '#dcfce7'
+                                                    : isDateOverdue
+                                                      ? '#fef2f2'
+                                                      : '#f1f5f9',
+                                                color:
+                                                  d.estado === 'ejecutada'
+                                                    ? '#166534'
+                                                    : isDateOverdue
+                                                      ? '#b42318'
+                                                      : '#334155',
+                                                border:
+                                                  d.estado === 'ejecutada'
+                                                    ? '1px solid #86efac'
+                                                    : isDateOverdue
+                                                      ? '1px solid #fca5a5'
+                                                      : '1px solid #cbd5e1',
+                                                whiteSpace: 'nowrap',
+                                              }}
+                                            >
+                                              #{d.numero}: {formatDateES(d.fecha_programada)}
+                                              {isDateOverdue ? ' · Vencida' : ''}
+                                            </span>
+                                          )
+                                        })}
                                       </div>
                                     </div>
                                   </td>
 
                                   <td style={{ padding: '12px 10px', verticalAlign: 'middle', textAlign: 'center' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                                      <span
-                                        className={`plan-badge ${
-                                          act.estado === 'Ejecutada'
-                                            ? 'plan-complete'
-                                            : act.estado === 'En ejecución'
+                                    {(() => {
+                                      const isExecuted = act.estado === 'Ejecutada'
+                                      const isOverdue = !isExecuted && sem.days < 0
+                                      const isCritical30 = !isExecuted && sem.days >= 0 && sem.days <= 30
+                                      const isPriority60 = !isExecuted && sem.days > 30 && sem.days <= 60
+
+                                      const estadoBadgeClass = isExecuted
+                                        ? 'plan-complete'
+                                        : isOverdue
+                                          ? 'plan-overdue'
+                                          : isCritical30
+                                            ? 'plan-urgent'
+                                            : isPriority60 || act.estado === 'En ejecución'
                                               ? 'plan-month'
                                               : 'plan-future'
-                                        }`}
-                                        style={{ fontWeight: 700 }}
-                                      >
-                                        {act.estado}
-                                      </span>
-                                      <span className={`plan-badge ${sem.badgeClass}`} style={{ fontSize: 10.5 }}>
-                                        Próx: {formatDateES(act.plazo_ejecucion)}
-                                      </span>
-                                    </div>
+
+                                      const estadoDynamicLabel = isExecuted
+                                        ? 'Cumple · Ejecutada'
+                                        : isOverdue
+                                          ? `No cumple · Vencida (Sin soporte)`
+                                          : isCritical30
+                                            ? `${act.estado} · Crítico (<=30d)`
+                                            : isPriority60
+                                              ? `${act.estado} · Prioridad (31-60d)`
+                                              : `${act.estado} · En término (>60d)`
+
+                                      const semChipText = isExecuted
+                                        ? `Ejecutada (${formatDateES(act.plazo_ejecucion)})`
+                                        : isOverdue
+                                          ? `Vencida hace ${Math.abs(sem.days)} d (${formatDateES(act.plazo_ejecucion)})`
+                                          : sem.days === 0
+                                            ? `Vence hoy (${formatDateES(act.plazo_ejecucion)})`
+                                            : `Vence en ${sem.days} d (${formatDateES(act.plazo_ejecucion)})`
+
+                                      return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                                          <span
+                                            className={`plan-badge ${estadoBadgeClass}`}
+                                            style={{ fontWeight: 700 }}
+                                          >
+                                            {estadoDynamicLabel}
+                                          </span>
+                                          <span className={`plan-badge ${sem.badgeClass}`} style={{ fontSize: 10.5, fontWeight: 600 }}>
+                                            {semChipText}
+                                          </span>
+                                        </div>
+                                      )
+                                    })()}
                                   </td>
 
                                   <td style={{ padding: '12px 10px', verticalAlign: 'middle' }}>
@@ -1605,24 +1663,40 @@ export default function InfraestructuraModule({
                                       <small style={{ fontSize: 10.5, color: '#15966a', fontWeight: 600 }}>
                                         Ejec: {formatCOP(act.presupuesto_ejecutado || 0)}
                                       </small>
-                                      {act.soporte_pdf_nombre && (
+                                      {act.seguimientos.length > 0 || act.soporte_pdf_nombre ? (
+                                        <>
+                                          {act.soporte_pdf_nombre && (
+                                            <small
+                                              style={{
+                                                color: '#2563eb',
+                                                fontSize: 10.5,
+                                                fontWeight: 600,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                              }}
+                                            >
+                                              {act.soporte_pdf_nombre}
+                                            </small>
+                                          )}
+                                          <small style={{ color: '#15966a', fontSize: 10, fontWeight: 600 }}>
+                                            {act.seguimientos.length} ejec. ·{' '}
+                                            {act.seguimientos.reduce((s, x) => s + x.fotos.length, 0)} foto(s)
+                                          </small>
+                                        </>
+                                      ) : (
                                         <small
                                           style={{
-                                            color: '#2563eb',
+                                            color: sem.days < 0 ? '#b42318' : '#64748b',
                                             fontSize: 10.5,
-                                            fontWeight: 600,
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap',
+                                            fontWeight: sem.days < 0 ? 700 : 500,
                                           }}
                                         >
-                                          {act.soporte_pdf_nombre}
+                                          {sem.days < 0
+                                            ? 'Sin soporte de ejecución (Vencida)'
+                                            : 'Pendiente de soporte (0 ejec.)'}
                                         </small>
                                       )}
-                                      <small style={{ color: '#64748b', fontSize: 10 }}>
-                                        {act.seguimientos.length} ejec. ·{' '}
-                                        {act.seguimientos.reduce((s, x) => s + x.fotos.length, 0)} foto(s)
-                                      </small>
                                     </div>
                                   </td>
 

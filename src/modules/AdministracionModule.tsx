@@ -2025,29 +2025,45 @@ export default function AdministracionModule({
                                         gap: 4,
                                       }}
                                     >
-                                      {annualDates.slice(0, 4).map((d) => (
-                                        <span
-                                          key={d.id}
-                                          style={{
-                                            display: 'inline-block',
-                                            padding: '2px 6px',
-                                            borderRadius: 4,
-                                            fontSize: 10,
-                                            fontWeight: 600,
-                                            background:
-                                              d.estado === 'ejecutada' ? '#dcfce7' : '#f1f5f9',
-                                            color:
-                                              d.estado === 'ejecutada' ? '#166534' : '#334155',
-                                            border:
-                                              d.estado === 'ejecutada'
-                                                ? '1px solid #86efac'
-                                                : '1px solid #cbd5e1',
-                                            whiteSpace: 'nowrap',
-                                          }}
-                                        >
-                                          #{d.numero}: {formatDateES(d.fecha_programada)}
-                                        </span>
-                                      ))}
+                                      {annualDates.slice(0, 4).map((d) => {
+                                        const isDateOverdue =
+                                          d.estado !== 'ejecutada' &&
+                                          diffDays(d.fecha_programada, today) < 0
+                                        return (
+                                          <span
+                                            key={d.id}
+                                            style={{
+                                              display: 'inline-block',
+                                              padding: '2px 6px',
+                                              borderRadius: 4,
+                                              fontSize: 10,
+                                              fontWeight: 600,
+                                              background:
+                                                d.estado === 'ejecutada'
+                                                  ? '#dcfce7'
+                                                  : isDateOverdue
+                                                    ? '#fef2f2'
+                                                    : '#f1f5f9',
+                                              color:
+                                                d.estado === 'ejecutada'
+                                                  ? '#166534'
+                                                  : isDateOverdue
+                                                    ? '#b42318'
+                                                    : '#334155',
+                                              border:
+                                                d.estado === 'ejecutada'
+                                                  ? '1px solid #86efac'
+                                                  : isDateOverdue
+                                                    ? '1px solid #fca5a5'
+                                                    : '1px solid #cbd5e1',
+                                              whiteSpace: 'nowrap',
+                                            }}
+                                          >
+                                            #{d.numero}: {formatDateES(d.fecha_programada)}
+                                            {isDateOverdue ? ' · Vencida' : ''}
+                                          </span>
+                                        )
+                                      })}
                                       {annualDates.length > 4 && (
                                         <span
                                           style={{
@@ -2089,8 +2105,12 @@ export default function AdministracionModule({
                                     >
                                       {ev.estadoSeguimiento}
                                     </span>
-                                    <span className={`plan-badge ${ev.semaforo.badgeClass}`} style={{ fontSize: 10.5 }}>
-                                      Vence: {formatDateES(ev.fechaEfectivaVencimiento)}
+                                    <span className={`plan-badge ${ev.semaforo.badgeClass}`} style={{ fontSize: 10.5, fontWeight: 600 }}>
+                                      {ev.semaforo.days < 0
+                                        ? `Vencido hace ${Math.abs(ev.semaforo.days)} d (${formatDateES(ev.fechaEfectivaVencimiento)})`
+                                        : ev.semaforo.days === 0
+                                          ? `Vence hoy (${formatDateES(ev.fechaEfectivaVencimiento)})`
+                                          : `Vence en ${ev.semaforo.days} d (${formatDateES(ev.fechaEfectivaVencimiento)})`}
                                     </span>
                                   </div>
                                 </td>
