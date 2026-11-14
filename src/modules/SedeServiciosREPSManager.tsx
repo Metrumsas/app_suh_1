@@ -255,6 +255,7 @@ export default function SedeServiciosREPSManager({
   const handleSaveService = () => {
     const activeMods = summarizeModalidadesREPS(draft.modalidades)
     if (activeMods.length === 0) return
+    if (!draft.numero_distintivo.trim()) return
 
     const nextList = editingId
       ? servicios.map((s) => (s.id === editingId ? draft : s))
@@ -471,6 +472,7 @@ export default function SedeServiciosREPSManager({
               </span>
               <input
                 type="date"
+                required
                 value={draft.fecha_apertura}
                 onChange={(e) => setDraft({ ...draft, fecha_apertura: e.target.value })}
               />
@@ -478,12 +480,15 @@ export default function SedeServiciosREPSManager({
 
             <label className="form-field">
               <span>
-                Observaciones o Especificidad Adicional
+                Número Distintivo <b>*</b>
               </span>
               <input
-                value={draft.especificidades}
-                onChange={(e) => setDraft({ ...draft, especificidades: e.target.value })}
-                placeholder="Especificaciones adicionales del servicio en la sede..."
+                required
+                value={draft.numero_distintivo}
+                onChange={(e) =>
+                  setDraft({ ...draft, numero_distintivo: e.target.value.toUpperCase() })
+                }
+                placeholder="Ej. DHSS0729494"
               />
             </label>
 
@@ -1445,18 +1450,18 @@ export default function SedeServiciosREPSManager({
               </div>
               <div>
                 <small style={{ color: '#64748b', display: 'block', fontSize: 10.5 }}>
-                  COMPLEJIDAD Y FECHA DE APERTURA
+                  NÚMERO DISTINTIVO
                 </small>
-                <strong style={{ color: '#0f172a' }}>
-                  {detailViewItem.complejidad.toUpperCase()} · {formatDateES(detailViewItem.fecha_apertura)}
+                <strong style={{ color: '#1d4ed8' }}>
+                  {detailViewItem.numero_distintivo || 'No registrado'}
                 </strong>
               </div>
               <div>
                 <small style={{ color: '#64748b', display: 'block', fontSize: 10.5 }}>
-                  ESPECIFICIDADES REGISTRADAS
+                  COMPLEJIDAD Y FECHA DE APERTURA
                 </small>
                 <strong style={{ color: '#0f172a' }}>
-                  {detailViewItem.especificidades || 'Ninguna especificidad especial'}
+                  {detailViewItem.complejidad.toUpperCase()} · {formatDateES(detailViewItem.fecha_apertura)}
                 </strong>
               </div>
             </div>
