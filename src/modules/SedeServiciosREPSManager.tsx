@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   CheckCircle2,
   ChevronDown,
@@ -126,6 +126,13 @@ export default function SedeServiciosREPSManager({
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [detailViewItem, setDetailViewItem] = useState<SedeServicioHabilitadoREPS | null>(null)
+  const formRef = useRef<HTMLDivElement | null>(null)
+
+  const scrollToForm = () => {
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 60)
+  }
   const [draft, setDraft] = useState<SedeServicioHabilitadoREPS>(() => createEmptyServicioREPS())
   const [searchFilter, setSearchFilter] = useState('')
   const [showAllGroupsInSelect, setShowAllGroupsInSelect] = useState(false)
@@ -269,16 +276,44 @@ export default function SedeServiciosREPSManager({
     setDraft(fresh)
     syncHorarioStateFromRecord(fresh.horarios)
     setFormOpen(true)
+    scrollToForm()
   }
 
   const openEdit = (srv: SedeServicioHabilitadoREPS) => {
     setEditingId(srv.id)
     setSearchFilter('')
     setFormError('')
-    const copy = structuredClone(srv)
+    const copy: SedeServicioHabilitadoREPS = {
+      ...srv,
+      numero_distintivo: srv.numero_distintivo ?? '',
+      especificidades: srv.especificidades ?? '',
+      horarios: {
+        lunes: srv.horarios?.lunes ?? '07:00 a 17:00',
+        martes: srv.horarios?.martes ?? '07:00 a 17:00',
+        miercoles: srv.horarios?.miercoles ?? '07:00 a 17:00',
+        jueves: srv.horarios?.jueves ?? '07:00 a 17:00',
+        viernes: srv.horarios?.viernes ?? '07:00 a 17:00',
+        sabado: srv.horarios?.sabado ?? '07:00 a 12:00',
+        domingo: srv.horarios?.domingo ?? '',
+      },
+      modalidades: {
+        intramural: Boolean(srv.modalidades?.intramural),
+        extramural_unidad_movil: Boolean(srv.modalidades?.extramural_unidad_movil),
+        extramural_domiciliario: Boolean(srv.modalidades?.extramural_domiciliario),
+        extramural_jornada_salud: Boolean(srv.modalidades?.extramural_jornada_salud),
+        extramural_transporte_aph: Boolean(srv.modalidades?.extramural_transporte_aph),
+        telemedicina_ref_interactiva: Boolean(srv.modalidades?.telemedicina_ref_interactiva),
+        telemedicina_ref_no_interactiva: Boolean(srv.modalidades?.telemedicina_ref_no_interactiva),
+        telemedicina_ref_telexperticia: Boolean(srv.modalidades?.telemedicina_ref_telexperticia),
+        telemedicina_ref_telemonitoreo: Boolean(srv.modalidades?.telemedicina_ref_telemonitoreo),
+        telemedicina_rem_telexperticia: Boolean(srv.modalidades?.telemedicina_rem_telexperticia),
+        telemedicina_rem_telemonitoreo: Boolean(srv.modalidades?.telemedicina_rem_telemonitoreo),
+      },
+    }
     setDraft(copy)
     syncHorarioStateFromRecord(copy.horarios)
     setFormOpen(true)
+    scrollToForm()
   }
 
   const handleDelete = (id: string) => {
@@ -348,13 +383,15 @@ export default function SedeServiciosREPSManager({
       {/* Formulario Desplegable para Crear o Actualizar Servicio de Salud (Idéntico al REPS con Reglas de Parámetros 3100) */}
       {formOpen && (
         <div
+          ref={formRef}
           style={{
-            border: '1.5px solid #2563eb',
+            border: '2px solid #2563eb',
             borderRadius: 12,
             padding: 16,
             background: '#f8fafc',
             display: 'grid',
             gap: 14,
+            boxShadow: '0 8px 24px rgba(37, 99, 235, 0.12)',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1315,12 +1352,13 @@ export default function SedeServiciosREPSManager({
               {serviciosOrdenados.map((srv, idx) => {
                 const mods = summarizeModalidadesREPS(srv.modalidades)
                 const isDetailOpen = detailViewItem?.id === srv.id
+                const isBeingEdited = formOpen && editingId === srv.id
                 return (
                   <tr
                     key={srv.id}
                     style={{
                       borderTop: idx === 0 ? 'none' : '1px solid #e2e8f0',
-                      background: isDetailOpen ? '#f0f7ff' : '#ffffff',
+                      background: isBeingEdited ? '#eff6ff' : isDetailOpen ? '#f0f7ff' : '#ffffff',
                     }}
                   >
                     <td style={{ padding: '12px 14px', verticalAlign: 'middle', textAlign: 'left' }}>
@@ -1506,9 +1544,9 @@ export default function SedeServiciosREPSManager({
                               minWidth: 76,
                               padding: '0 10px',
                               borderRadius: 6,
-                              border: '1px solid #bfdbfe',
-                              background: '#eff6ff',
-                              color: '#1d4ed8',
+                              border: isBeingEdited ? '1.5px solid #1d4ed8' : '1px solid #bfdbfe',
+                              background: isBeingEdited ? '#2563eb' : '#eff6ff',
+                              color: isBeingEdited ? '#ffffff' : '#1d4ed8',
                               fontSize: 11.5,
                               fontWeight: 600,
                               cursor: 'pointer',
@@ -1516,7 +1554,7 @@ export default function SedeServiciosREPSManager({
                               boxSizing: 'border-box',
                             }}
                           >
-                            <Pencil size={13} /> Editar
+                            <Pencil size={13} /> {isBeingEdited ? 'Editando' : 'Editar'}
                           </button>
                           <button
                             type="button"
