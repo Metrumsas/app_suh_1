@@ -26,6 +26,35 @@ const GRUPOS_SERVICIO_REPS: GrupoServicio3100[] = [
   ...GRUPOS_SERVICIOS_3100_OFICIAL,
 ]
 
+function openPdfDataUrlInNewTab(dataUrl: string, fileName?: string) {
+  try {
+    if (dataUrl.startsWith('data:')) {
+      const [header, base64] = dataUrl.split(',')
+      const mimeMatch = header.match(/data:(.*?);/)
+      const mime = mimeMatch ? mimeMatch[1] : 'application/pdf'
+      const binary = atob(base64)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: mime })
+      const blobUrl = URL.createObjectURL(blob)
+      const win = window.open(blobUrl, '_blank', 'noopener,noreferrer')
+      if (!win) {
+        const a = document.createElement('a')
+        a.href = blobUrl
+        a.target = '_blank'
+        a.download = fileName || 'Distintivo_Habilitacion.pdf'
+        a.click()
+      }
+      return
+    }
+    window.open(dataUrl, '_blank', 'noopener,noreferrer')
+  } catch {
+    window.open(dataUrl, '_blank', 'noopener,noreferrer')
+  }
+}
+
 function sanitizeModalidadesForService(
   current: SedeServicioHabilitadoREPS['modalidades'],
   param?: ParametroServicio3100,
@@ -1388,33 +1417,37 @@ export default function SedeServiciosREPSManager({
                           gap: 4,
                         }}
                       >
-                        <span
-                          className="plan-badge plan-future"
-                          style={{ fontWeight: 700, whiteSpace: 'nowrap' }}
-                        >
-                          {srv.numero_distintivo || 'Sin distintivo'}
-                        </span>
-                        {srv.distintivo_pdf_data && (
-                          <a
-                            href={srv.distintivo_pdf_data}
-                            download={
-                              srv.distintivo_pdf_nombre ||
-                              `Distintivo_${srv.codigo_servicio}_${srv.numero_distintivo}.pdf`
+                        {srv.distintivo_pdf_data ? (
+                          <button
+                            type="button"
+                            title="Haz clic para abrir el PDF del Distintivo de Habilitación"
+                            onClick={() =>
+                              openPdfDataUrlInNewTab(
+                                srv.distintivo_pdf_data!,
+                                srv.distintivo_pdf_nombre ||
+                                  `Distintivo_${srv.codigo_servicio}_${srv.numero_distintivo}.pdf`,
+                              )
                             }
-                            target="_blank"
-                            rel="noreferrer"
+                            className="plan-badge plan-complete"
                             style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              color: '#2563eb',
-                              fontSize: 10.5,
-                              fontWeight: 600,
+                              fontWeight: 700,
+                              whiteSpace: 'nowrap',
+                              cursor: 'pointer',
+                              border: '1px solid #86efac',
                               textDecoration: 'underline',
+                              textUnderlineOffset: 2,
                             }}
                           >
-                            <FileDown size={11} /> Ver PDF
-                          </a>
+                            <FileDown size={12} /> {srv.numero_distintivo || 'Ver Distintivo'}
+                          </button>
+                        ) : (
+                          <span
+                            className="plan-badge plan-future"
+                            style={{ fontWeight: 700, whiteSpace: 'nowrap' }}
+                            title="Edita el servicio y adjunta el PDF del distintivo para abrirlo con un clic"
+                          >
+                            {srv.numero_distintivo || 'Sin distintivo'}
+                          </span>
                         )}
                       </div>
                     </td>
@@ -1553,31 +1586,36 @@ export default function SedeServiciosREPSManager({
                 <small style={{ color: '#64748b', display: 'block', fontSize: 10.5 }}>
                   NÚMERO DISTINTIVO
                 </small>
-                <strong style={{ color: '#1d4ed8', display: 'block' }}>
-                  {detailViewItem.numero_distintivo || 'No registrado'}
-                </strong>
-                {detailViewItem.distintivo_pdf_data && (
-                  <a
-                    href={detailViewItem.distintivo_pdf_data}
-                    download={
-                      detailViewItem.distintivo_pdf_nombre ||
-                      `Distintivo_${detailViewItem.codigo_servicio}_${detailViewItem.numero_distintivo}.pdf`
+                {detailViewItem.distintivo_pdf_data ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openPdfDataUrlInNewTab(
+                        detailViewItem.distintivo_pdf_data!,
+                        detailViewItem.distintivo_pdf_nombre ||
+                          `Distintivo_${detailViewItem.codigo_servicio}_${detailViewItem.numero_distintivo}.pdf`,
+                      )
                     }
-                    target="_blank"
-                    rel="noreferrer"
                     style={{
+                      border: 'none',
+                      background: 'transparent',
+                      padding: 0,
+                      color: '#1d4ed8',
+                      fontWeight: 700,
+                      fontSize: 12.5,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 4,
-                      marginTop: 3,
-                      color: '#2563eb',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      textDecoration: 'underline',
+                      gap: 5,
                     }}
                   >
-                    <FileDown size={12} /> Descargar PDF del Distintivo
-                  </a>
+                    <FileDown size={13} /> {detailViewItem.numero_distintivo || 'Abrir PDF Distintivo'}
+                  </button>
+                ) : (
+                  <strong style={{ color: '#1d4ed8', display: 'block' }}>
+                    {detailViewItem.numero_distintivo || 'No registrado'}
+                  </strong>
                 )}
               </div>
               <div>
