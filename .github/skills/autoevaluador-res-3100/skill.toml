@@ -1,0 +1,22 @@
+[skill]
+name = "autoevaluador-res-3100"
+version = "1.0.0"
+description = "Autoevaluación dinámica por sede y servicio Res. 3100"
+author = "openjarvis-suh"
+tags = ["resolucion-3100", "habilitacion", "reps"]
+required_capabilities = ["supabase:read", "supabase:write"]
+
+[[skill.steps]]
+tool_name = "quality_manage_audit"
+arguments_template = '{"sede": "{sede}", "mode": "variable_checklist_3100"}'
+output_key = "checklist_evaluation"
+
+[[skill.steps]]
+tool_name = "quality_generate_audit_report"
+arguments_template = '{"evaluation": "{checklist_evaluation}"}'
+output_key = "audit_report"
+
+[[skill.steps]]
+tool_name = "drive_create_quality_folder_tree"
+arguments_template = '{"sede": "{sede}", "report": "{audit_report}"}'
+output_key = "drive_package"

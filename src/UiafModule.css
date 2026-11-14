@@ -1,0 +1,150 @@
+.uiaf-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.uiaf-tab {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #dce4ef;
+  border-radius: 12px;
+  background: #fff;
+  color: #46566b;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, box-shadow .15s, color .15s;
+}
+
+.uiaf-tab:hover {
+  border-color: #b7c8e6;
+  background: #f8faff;
+}
+
+.uiaf-tab > svg {
+  flex: 0 0 auto;
+  color: #5b78b8;
+}
+
+.uiaf-tab-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.uiaf-tab-copy strong {
+  color: #172c4c;
+  font-size: 13px;
+  font-weight: 660;
+  line-height: 1.3;
+}
+
+.uiaf-tab-copy small {
+  color: #68778b;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.uiaf-tab-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #eef3fb;
+  color: #3454a1;
+  font-size: 11px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.uiaf-tab-active {
+  border-color: #3269dd;
+  background: #eef4ff;
+  box-shadow: 0 0 0 1px #3269dd, 0 4px 14px rgb(50 105 221 / 10%);
+}
+
+.uiaf-tab-active > svg {
+  color: #3269dd;
+}
+
+.uiaf-tab-active .uiaf-tab-copy strong {
+  color: #163777;
+}
+
+.uiaf-tab-active .uiaf-tab-badge {
+  background: #3269dd;
+  color: #fff;
+}
+
+.uiaf-section-filters { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 12px 0 14px; }
+.uiaf-local-search { flex: 1 1 280px; margin: 0 !important; }
+
+.uiaf-semaforo { display: inline-block; border-radius: 7px; padding: 4px 8px; font-size: 11px; font-weight: 650; white-space: nowrap; }
+.uiaf-semaforo-green { color: #176342; background: #e7f5ed; }
+.uiaf-semaforo-red { color: #a32828; background: #ffd9d4; }
+.uiaf-semaforo-amber { color: #785500; background: #fff3d6; }
+
+.uiaf-cell-sub { display: block; margin-top: 3px; color: #68778b; font-size: 11px; }
+.uiaf-pdf-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 8px; border: 1px solid transparent; border-radius: 7px; background: #eef3fb; color: #25406b; font: inherit; font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; transition: background .15s, border-color .15s; }
+.uiaf-pdf-chip:hover:not(:disabled) { background: #e1ebf9; border-color: #bfd2f2; }
+.uiaf-pdf-chip:disabled { opacity: .65; cursor: wait; }
+.uiaf-pdf-chip svg { flex-shrink: 0; }
+.uiaf-muted { color: #8490a0; font-size: 11.5px; }
+
+.uiaf-title-preview { padding: 10px 12px; border: 1px solid #dbe4f0; border-radius: 10px; background: #f6f9fe; margin-bottom: 14px; }
+.uiaf-title-preview strong { display: block; margin-top: 4px; color: #1e3a6d; font-size: 13.5px; }
+
+/* Tabla 1: Reportes UIAF (7 columnas) */
+.plan-table-panel.uiaf-reports-panel table { min-width: 900px; }
+.plan-table-panel.uiaf-reports-panel table th:nth-child(1) { width: 124px; }
+.plan-table-panel.uiaf-reports-panel table th:nth-child(2) { width: auto; }
+.plan-table-panel.uiaf-reports-panel table th:nth-child(3) { width: 118px; }
+.plan-table-panel.uiaf-reports-panel table th:nth-child(4) { width: 142px; }
+.plan-table-panel.uiaf-reports-panel table th:nth-child(5) { width: 132px; }
+.plan-table-panel.uiaf-reports-panel table th:nth-child(6) { width: 146px; }
+.plan-table-panel.uiaf-reports-panel table th:nth-child(7) { width: 96px; text-align: right; }
+
+/* Tabla 2: Actas de Junta Directiva (5 columnas) */
+.plan-table-panel.uiaf-actas-panel table { min-width: 820px; }
+.plan-table-panel.uiaf-actas-panel table th:nth-child(1) { width: 116px; }
+.plan-table-panel.uiaf-actas-panel table th:nth-child(2) { width: 170px; }
+.plan-table-panel.uiaf-actas-panel table th:nth-child(3) { width: auto; }
+.plan-table-panel.uiaf-actas-panel table th:nth-child(4) { width: 156px; }
+.plan-table-panel.uiaf-actas-panel table th:nth-child(5) { width: 96px; text-align: right; }
+
+.plan-table-panel.uiaf-reports-panel table th,
+.plan-table-panel.uiaf-reports-panel table td,
+.plan-table-panel.uiaf-actas-panel table th,
+.plan-table-panel.uiaf-actas-panel table td {
+  vertical-align: middle;
+  overflow-wrap: break-word;
+  hyphens: manual;
+}
+
+.plan-table-panel.uiaf-reports-panel table td:nth-child(1),
+.plan-table-panel.uiaf-reports-panel table td:nth-child(3),
+.plan-table-panel.uiaf-actas-panel table td:nth-child(1) {
+  white-space: nowrap;
+}
+
+.uiaf-row-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; }
+.work-plan .plan-table-panel .uiaf-row-actions .button { padding: 7px 10px; font-size: 12px; gap: 5px; white-space: nowrap; overflow-wrap: normal; flex-shrink: 0; line-height: 1.2; }
+.work-plan .plan-table-panel .uiaf-row-actions .button svg { flex-shrink: 0; }
+
+@media (max-width: 700px) {
+  .uiaf-tabs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .plan-table-panel.uiaf-reports-panel table,
+  .plan-table-panel.uiaf-actas-panel table {
+    min-width: 0;
+  }
+  .uiaf-row-actions { justify-content: flex-start; flex-wrap: wrap; }
+}

@@ -1,0 +1,42 @@
+.record-dialog { width: min(1080px, calc(100% - 32px)); border-radius: 20px; }
+.record-dialog .case-dialog-header { padding: 22px 28px; }
+.record-dialog-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.record-dialog-title-icon { display: inline-flex; padding: 13px; border-radius: 14px; color: #3454a1; background: #eaf0ff; flex-shrink: 0; }
+.record-dialog .case-dialog-header h2 { font-size: 21px; color: #172c4c; }
+.record-dialog-title p { margin: 5px 0 0; color: #68778b; font-size: 12px; }
+.record-dialog .case-dialog-body { padding: 24px 28px; }
+.record-dialog .case-detail-toolbar { gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin-bottom: 20px; }
+.record-dialog .case-detail-toolbar > .record-toolbar-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-right: auto; font-size: 12px; font-weight: 600; color: #52617a; }
+.record-dialog .case-section { border-radius: 16px; padding: 22px; margin-bottom: 20px; box-shadow: 0 3px 12px #25344a04; }
+.record-dialog .case-section > h3, .record-dialog .case-section > summary { color: #172c4c; font-size: 16px; padding-bottom: 14px; border-bottom: 1px solid #e8edf5; margin-bottom: 18px; }
+.record-dialog .case-section > h3 { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.record-dialog .case-files { margin-top: 18px; }
+.record-dialog .case-files li { background: #f7f9fc; border: 1px solid #e8edf5; border-radius: 10px; padding: 12px; }
+.record-dialog .case-files svg { flex-shrink: 0; }
+.record-dialog .form-field :is(select, textarea, input:not([type=checkbox]):not([type=radio])) { border-radius: 10px; }
+.record-dialog .case-save-actions { position: sticky; bottom: -24px; z-index: 1; background: #fff; padding: 16px; border: 1px solid #dfe6f1; border-radius: 14px; box-shadow: 0 -4px 18px #25344a0a; margin-bottom: 20px; }
+.record-dialog .case-section details { margin-top: 10px; padding: 12px; border: 1px solid #e3e9f2; border-radius: 10px; background: #fafbfd; }
+.record-dialog .case-section details > summary { color: #345071; font-weight: 600; }
+.record-dialog .record-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; gap: 1px; background: #e8edf5; border: 1px solid #e0e7f1; border-radius: 12px; overflow: hidden; }
+.record-dialog .record-fields > div { padding: 9px 12px; background: #fff; min-width: 0; }
+.record-dialog .record-fields dt { color: #68778b; font-size: 11px; font-weight: 500; }
+.record-dialog .record-fields dd { margin: 3px 0 0; color: #253b59; font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.record-dialog .record-fields .record-field-wide { grid-column: 1 / -1; }
+.record-dialog .record-block-title { margin: 18px 0 8px; color: #345071; font-size: 12px; }
+.record-dialog .case-classifications { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.record-dialog .case-classifications label { padding: 11px 12px; border: 1px solid #dce3ee; border-radius: 10px; background: #fafbfd; overflow-wrap: anywhere; }
+.record-dialog .case-classifications label:has(input:checked) { border-color: #5077cb; background: #eef3ff; }
+.record-dialog input[type=checkbox] { accent-color: #3454a1; flex-shrink: 0; }
+.record-dialog .case-classifications label:focus-within { outline: 2px solid #5077cb; outline-offset: 2px; }
+@media (max-width: 700px) {
+  .record-dialog .case-dialog-header, .record-dialog .case-dialog-body { padding: 16px; }
+  .record-dialog .case-section { padding: 14px; }
+  .record-dialog-title-icon { display: none; }
+  .record-dialog .case-dialog-header h2 { font-size: 18px; }
+  .record-dialog .case-save-actions { bottom: -16px; padding: 12px; }
+  .record-dialog .record-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .record-dialog .record-fields, .record-dialog .case-classifications { grid-template-columns: minmax(0, 1fr); }
+  .record-dialog .case-save-actions .button { width: 100%; }
+}

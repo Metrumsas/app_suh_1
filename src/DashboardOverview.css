@@ -1,0 +1,77 @@
+.dashboard-overview { display: grid; gap: 22px; min-width: 0; }
+.dash-block { display: grid; gap: 12px; min-width: 0; }
+.dash-block-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f2; }
+.dash-block-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.dash-block-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; background: #eaf0fb; color: #2a4b96; flex-shrink: 0; }
+.dash-block-title h2 { margin: 0; font-size: 15px; font-weight: 680; color: #1d324f; }
+.dash-block-title p { margin: 2px 0 0; font-size: 11.5px; color: #68778b; }
+.dash-goto { padding: 6px 11px; font-size: 12px; gap: 6px; white-space: nowrap; }
+
+.dash-kpis article { padding: 13px 15px; }
+.dash-kpis .complaint-kpi-heading { margin-bottom: 8px; }
+.dash-kpis article > strong { font-size: 20px; color: #253b59; }
+.dash-kpis article > p { margin: 4px 0 0; font-size: 11.5px; line-height: 1.4; color: #68778b; }
+
+/* 1. RIESGOS GRID */
+.dash-risk-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(230px, 1fr) minmax(220px, .95fr); gap: 12px; align-items: stretch; }
+.dash-heat-card, .dash-profile-card, .dash-dist-card { padding: 14px; min-width: 0; }
+.dash-heat-card h3, .dash-profile-card h3, .dash-dist-card h3, .dash-calendar-card h3, .dash-alerts-card h3, .dash-list-card h3 { margin: 0; font-size: 13.5px; font-weight: 650; color: #1d324f; }
+.dash-heat-card p, .dash-profile-card > p, .dash-dist-card > p { margin: 2px 0 0; font-size: 11px; color: #68778b; }
+.dash-heat { max-width: 440px; margin: 8px auto 0; }
+.dash-dist-list { display: grid; gap: 6px; margin-top: 8px; }
+.dash-dist-list .risk-dist-row { margin-top: 0; padding: 8px 10px; }
+
+/* 2. PLAN DE TRABAJO GRID */
+.dash-plan-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.dash-calendar-card, .dash-alerts-card, .dash-list-card { padding: 14px; min-width: 0; }
+.dash-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 10px; }
+.dash-calendar-grid > strong { text-align: center; font-size: 11px; color: #68778b; padding: 4px 0; }
+.dash-cal-empty { min-height: 36px; }
+.dash-cal-day { position: relative; display: flex; align-items: center; justify-content: space-between; min-height: 36px; padding: 5px 7px; border: 1px solid #e4eaf3; border-radius: 7px; background: #fff; color: #253b59; font-size: 11.5px; font-weight: 550; cursor: pointer; transition: border-color .15s, background .15s; }
+.dash-cal-day:hover { border-color: #3454a1; background: #f6f9ff; }
+.dash-cal-today { border: 2px solid #3454a1; font-weight: 700; }
+.dash-cal-has-events { background: #f8faff; }
+.dash-cal-selected { border-color: #1e3a8a; background: #e8f0fe; box-shadow: 0 0 0 2px #3454a1; font-weight: 700; }
+.dash-cal-hint { margin: 2px 0 0; font-size: 11px; color: #68778b; }
+.dash-cal-dot { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; font-style: normal; font-size: 10px; font-weight: 700; color: #fff; }
+.dash-dot-red { background: #c53030; }
+.dash-dot-amber { background: #b7791f; }
+.dash-dot-green { background: #1e7e52; }
+.dash-dot-blue { background: #3454a1; }
+
+/* LISTAS COMPACTAS DE SEGUIMIENTO */
+.dash-feed-list { display: grid; gap: 7px; margin: 10px 0 0; padding: 0; list-style: none; }
+.dash-feed-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 9px 11px; border: 1px solid #e3e9f2; border-radius: 9px; background: #fafbfd; text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
+.dash-feed-item:hover { border-color: #3454a1; background: #f4f8ff; }
+.dash-feed-item > div { min-width: 0; display: grid; gap: 2px; }
+.dash-feed-item strong { font-size: 12px; color: #1d324f; overflow-wrap: break-word; }
+.dash-feed-item small { font-size: 11px; color: #68778b; overflow-wrap: break-word; }
+.dash-feed-item .plan-badge { flex-shrink: 0; white-space: nowrap; }
+.dash-empty-note { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: #f6f8fc; color: #52617a; font-size: 12px; }
+
+/* 3. PROVEEDORES DOS COLUMNAS */
+.dash-two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+
+/* 4. AUDITORÍA + DENUNCIAS EN PARALELO */
+.dash-bottom-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.dash-mini-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.dash-mini-kpis article { padding: 13px 15px; min-width: 0; }
+.dash-mini-kpis .complaint-kpi-heading { margin-bottom: 8px; }
+.dash-mini-kpis article > strong { font-size: 20px; color: #253b59; }
+.dash-mini-kpis article > p { margin: 4px 0 0; font-size: 11.5px; color: #68778b; line-height: 1.35; }
+
+@media (max-width: 1150px) {
+  .dash-risk-grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+  .dash-dist-card { grid-column: 1 / -1; }
+  .dash-dist-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-bottom-split { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .dash-risk-grid, .dash-plan-grid, .dash-two-col { grid-template-columns: minmax(0, 1fr); }
+  .dash-dist-list { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 520px) {
+  .dash-mini-kpis { grid-template-columns: minmax(0, 1fr); }
+}
