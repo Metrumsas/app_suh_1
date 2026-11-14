@@ -22,7 +22,7 @@ function sanitizeModalidadesForService(
 ): SedeServicioHabilitadoREPS['modalidades'] {
   if (!param) return current
   const m = param.modalidades_permitidas
-  const next: SedeServicioHabilitadoREPS['modalidades'] = {
+  return {
     intramural: m.intramural ? current.intramural : false,
     extramural_unidad_movil: m.extramural_unidad_movil ? current.extramural_unidad_movil : false,
     extramural_domiciliario: m.extramural_domiciliario ? current.extramural_domiciliario : false,
@@ -35,14 +35,6 @@ function sanitizeModalidadesForService(
     telemedicina_rem_telexperticia: m.telemedicina_rem_telexperticia ? current.telemedicina_rem_telexperticia : false,
     telemedicina_rem_telemonitoreo: m.telemedicina_rem_telemonitoreo ? current.telemedicina_rem_telemonitoreo : false,
   }
-  if (summarizeModalidadesREPS(next).length === 0) {
-    if (m.intramural) next.intramural = true
-    else if (m.extramural_unidad_movil) next.extramural_unidad_movil = true
-    else if (m.extramural_domiciliario) next.extramural_domiciliario = true
-    else if (m.extramural_jornada_salud) next.extramural_jornada_salud = true
-    else if (m.telemedicina_ref_interactiva) next.telemedicina_ref_interactiva = true
-  }
-  return next
 }
 
 export function createEmptyServicioREPS(): SedeServicioHabilitadoREPS {
@@ -54,10 +46,10 @@ export function createEmptyServicioREPS(): SedeServicioHabilitadoREPS {
     grupo: first.grupo as GrupoServicio3100,
     codigo_servicio: first.codigo,
     nombre_servicio: first.nombre.toUpperCase(),
-    numero_distintivo: `DHSS0${Math.floor(100000 + Math.random() * 899999)}`,
+    numero_distintivo: '',
     complejidad: first.complejidades_permitidas[0] ?? 'Baja',
     fecha_apertura: todayISO(),
-    especificidades: first.especificidades_permitidas[0] ?? '',
+    especificidades: '',
     horarios: {
       lunes: '07:00 a 17:00',
       martes: '07:00 a 17:00',
@@ -68,7 +60,7 @@ export function createEmptyServicioREPS(): SedeServicioHabilitadoREPS {
       domingo: '',
     },
     modalidades: {
-      intramural: first.modalidades_permitidas.intramural,
+      intramural: false,
       extramural_unidad_movil: false,
       extramural_domiciliario: false,
       extramural_jornada_salud: false,
@@ -98,6 +90,7 @@ export default function SedeServiciosREPSManager({
   const [draft, setDraft] = useState<SedeServicioHabilitadoREPS>(() => createEmptyServicioREPS())
   const [searchFilter, setSearchFilter] = useState('')
   const [showAllGroupsInSelect, setShowAllGroupsInSelect] = useState(false)
+  const [formError, setFormError] = useState('')
   const [horaInicioH, setHoraInicioH] = useState('07')
   const [horaInicioM, setHoraInicioM] = useState('00')
   const [horaFinH, setHoraFinH] = useState('17')
@@ -232,6 +225,7 @@ export default function SedeServiciosREPSManager({
   const openAdd = () => {
     setEditingId(null)
     setSearchFilter('')
+    setFormError('')
     const fresh = createEmptyServicioREPS()
     setDraft(fresh)
     syncHorarioStateFromRecord(fresh.horarios)
@@ -241,6 +235,7 @@ export default function SedeServiciosREPSManager({
   const openEdit = (srv: SedeServicioHabilitadoREPS) => {
     setEditingId(srv.id)
     setSearchFilter('')
+    setFormError('')
     const copy = structuredClone(srv)
     setDraft(copy)
     syncHorarioStateFromRecord(copy.horarios)
@@ -253,9 +248,16 @@ export default function SedeServiciosREPSManager({
   }
 
   const handleSaveService = () => {
-    const activeMods = summarizeModalidadesREPS(draft.modalidades)
-    if (activeMods.length === 0) return
-    if (!draft.numero_distintivo.trim()) return
+    if (!draft.numero_distintivo.trim()) {
+      setFormError('Debes ingresar el Número Distintivo del servicio.')
+      return
+    }
+    const hasAnyMod = Object.values(draft.modalidades).some(Boolean)
+    if (!hasAnyMod) {
+      setFormError('Debes seleccionar al menos una Modalidad de prestación para el servicio.')
+      return
+    }
+    setFormError('')
 
     const nextList = editingId
       ? servicios.map((s) => (s.id === editingId ? draft : s))
@@ -331,6 +333,12 @@ export default function SedeServiciosREPSManager({
               <X size={16} />
             </button>
           </div>
+
+          {formError && (
+            <div className="portal-error" role="alert">
+              {formError}
+            </div>
+          )}
 
           <div className="plan-form-grid">
             <label className="form-field">
@@ -453,16 +461,11 @@ export default function SedeServiciosREPSManager({
                     ['Alta', 'ALTA COMPLEJIDAD'],
                     ['Sin complejidad', 'SIN COMPLEJIDAD'],
                   ] as const
-                ).map(([compVal, compLabel]) => {
-                  const isSuggested =
-                    selectedServiceParam?.complejidades_permitidas.includes(compVal)
-                  return (
-                    <option key={compVal} value={compVal}>
-                      {compLabel}
-                      {isSuggested ? ' (Sugerida Res. 3100)' : ''}
-                    </option>
-                  )
-                })}
+                ).map(([compVal, compLabel]) => (
+                  <option key={compVal} value={compVal}>
+                    {compLabel}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -488,7 +491,6 @@ export default function SedeServiciosREPSManager({
                 onChange={(e) =>
                   setDraft({ ...draft, numero_distintivo: e.target.value.toUpperCase() })
                 }
-                placeholder="Ej. DHSS0729494"
               />
             </label>
 

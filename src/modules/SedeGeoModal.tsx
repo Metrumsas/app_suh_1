@@ -15,7 +15,7 @@ import {
   findTerritorioByName,
   TERRITORIOS_SALUD_COLOMBIA,
 } from '../lib/colombia-reps-map'
-import SedeServiciosREPSManager, { createEmptyServicioREPS } from './SedeServiciosREPSManager'
+import SedeServiciosREPSManager from './SedeServiciosREPSManager'
 
 export default function SedeGeoModal({
   currentUser,
@@ -81,9 +81,7 @@ export default function SedeGeoModal({
   })
 
   const [autoAssignCatalog, setAutoAssignCatalog] = useState(true)
-  const [serviciosSede, setServiciosSede] = useState<SedeServicioHabilitadoREPS[]>(() => [
-    createEmptyServicioREPS(),
-  ])
+  const [serviciosSede, setServiciosSede] = useState<SedeServicioHabilitadoREPS[]>([])
 
   if (!isOpen) return null
 
